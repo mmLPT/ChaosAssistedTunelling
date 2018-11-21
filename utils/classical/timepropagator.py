@@ -2,7 +2,9 @@ import numpy as np
 
 from utils.mathtools.RK4 import *
 
-# ==================================================================
+# This script contains : 2 classes
+# + class : ClassicalDiscreteTimePropagator
+# + class : ClassicalContinueTimePropagator
 
 class ClassicalDiscreteTimePropagator:
 	def __init__(self,potential):
@@ -20,8 +22,9 @@ class ClassicalContinueTimePropagator(ClassicalDiscreteTimePropagator):
 		self.tstep=tstep
 		self.dt=dt
 		
-	# scheme to solve motion equation with RK4 such as y'=f(y,t) with y at 2D
+
 	def f(self,y,t):
+		# scheme to solve motion equation with RK4 such as y'=f(y,t) with y at 2D
 		yp=np.zeros(2) 
 		yp[0]=y[1]
 		yp[1]=-self.potential.dVdx(y[0],t)

@@ -2,22 +2,21 @@ import numpy as np
 
 from utils.quantum.grid import *
 
-# ==================================================================== #
-# Following class provides handy tools to manipulate wave function in  # 
-# x/p space 
-# ==================================================================== #
+# This script contains : 1 class
+# + class : WaveFunction
 
 class WaveFunction:
+	# The wavefunction class is used to describe a state in a 1D 
+	# infinite Hiblert space. It provides x and p representation.
+	# One needs to switch by hand representation every time it's needed
 	def __init__(self,grid):
 		self.grid=grid
 		self.x=np.zeros(grid.N,dtype=np.complex_)
 		self.p=np.zeros(grid.N,dtype=np.complex_)
-		
-# = PROPERTIES ======================================================= #
-# The two main properties that are acessible are x and p representation
-# /!\ Calling x or p representation doesn't compute FFT, you might
-# see "Changing representations"
-		
+	
+	# Following properties are x/p representation, they return set of
+	# complex values corresponding to the givne representation
+	# /!\ Calling x or p representation doesn't compute FFT
 	@property   
 	def x(self):
 		return self._x
@@ -33,52 +32,67 @@ class WaveFunction:
 	@p.setter
 	def p(self, value):
 		self._p = value	
+	
+	def getx(self): # not tested
+		self.p2x()
+		return sum(self.grid.x*abs(self.x)**2)
 		
-	def __add__(self,other):
+	def getp2(self): # not tested
+		return sum(self.grid.p**2*abs(self.p)**2)
+	
+	def normalize(self):
+		nrm2=sum(abs(self.p)**2)
+		self.p = self.p/np.sqrt(nrm2)
+		self.p2x()
+		
+	def save(self,datafile):
+		# Export both x/p representation in 'datafile.npz'
+		self.p2x()
+		np.savez(datafile,"w", x=self.grid.x, p=self.grid.p, psix=self.x, psip=np.fft.ifftshift(self.p))
+	
+	# Operators acting on objects
+	def __add__(self,other): # wf1+wf2 
+		# Add 2 wavefunctions
 		psix=self.x+other.x
 		wf=WaveFunction(self.grid)
 		wf.setState("setx",psix=psix)
 		return wf
+		
+	def __rmul__(self,scalar): # scalar*wf
+		# Multiply by a scalar at left
+		psix=self.x*scalar
+		wf=WaveFunction(self.grid)
+		wf.setState("setx",psix=psix)
+		return wf
 	
-	def __truediv__(self,other):
+	def __mul__(self,scalar): # wf*scalar
+		# Multiply by a scalar at right
+		psix=self.x*scalar
+		wf=WaveFunction(self.grid)
+		wf.setState("setx",psix=psix)
+		return wf
+	
+	def __truediv__(self,other): # wf1/wf2
+		# Get braket <wf1|wf2>
 		return sum(np.conj(self.x)*other.x)
 		
-	def __floordiv__(self,other):
+	def __floordiv__(self,other): # wf1//wf2
+		# Get probability |<wf1|wf2>|^2
 		return abs(sum(np.conj(self.x)*other.x))**2
-		
-# = CHANGING REPRESENTATION ========================================== #
-# Whenever you need to update x/p representation you may use these     
-# functions in order
 	
-	# the two following functions call FTT algorithm
+	# the two following functions call FTT algorithm and switch 
+	# from x/p to p/x representation.
 	def p2x(self):
 		self.x=np.fft.ifft(self.p,norm="ortho")
 		
 	def x2p(self):
 		self.p=np.fft.fft(self.x,norm="ortho") 
 		
-# = OUTPUT =========================================================== #
-# Export/get informations on wf 
-	# not tested	
-	def getx(self):
-		self.p2x()
-		return sum(self.grid.x*abs(self.x)**2)
-		
-	# not tested	
-	def getp2(self):
-		return sum(self.grid.p**2*abs(self.p)**2)
-		
-# = OUTPUT =========================================================== #	
-	# this save the actual wf in a given directory
-	def save(self,path):
-		self.p2x()
-		np.savez(path,"w", x=self.grid.x, p=self.grid.p, psix=self.x, psip=np.fft.ifftshift(self.p))
-		
 # = SET INITIAL STATE ================================================ #
 # /!\ Numpy FFT algorithme works in [0,xmax] if you want to define a p
 # wavefunction, make sure you center it, using self.grid.phaseshift
 
-	def setState(self, state,x0=0.0,i0=0,psix=0,psip=0,xratio=1.0): # rajouter un truc du genre,wf=0): pour charge hevec pex
+	def setState(self, state,x0=0.0,i0=0,psix=0,psip=0,xratio=1.0,datafile=""): # rajouter un truc du genre,wf=0): pour charge hevec pex
 		if state=="coherent":
 			# this gives a coherent state occupying a circled area in x/p
 			# representation (aspect ratio), xration makes possible to 
@@ -111,12 +125,8 @@ class WaveFunction:
 			self.p=np.zeros(self.grid.N,dtype=np.complex_)
 			self.p=psip
 			self.p2x()
-
-	def normalize(self):
-		nrm2=sum(abs(self.p)**2)
-		self.p = self.p/np.sqrt(nrm2)
-		self.p2x()
-		
-	def setAmplitude(self,amplitude):
-		self.x=self.x*amplitude
-		self.x2p()
+			
+		elif state=="load":
+			data=np.load(datafile+".npz")
+			self.x=data['psix']
+			self.p2x()

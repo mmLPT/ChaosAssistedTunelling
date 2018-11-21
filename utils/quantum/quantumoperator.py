@@ -3,8 +3,10 @@ import numpy as np
 from utils.quantum.grid import *
 from utils.quantum.wavefunction import *
 
-# ==================================================================== #
-# DIRTY 
+# This script contains: 3 classes
+# + class : QuantumOperator
+# + class : QuantumTimePropagator
+# + class : CATFloquetOperator
 
 class QuantumOperator:
 # This class provides a discrete representation for an x/p acting op.  

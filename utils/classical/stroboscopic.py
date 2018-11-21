@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import random as rd
-
 from utils.classical.timepropagator import *
 from utils.toolsbox import *
 
@@ -37,6 +36,7 @@ class StrobosopicPhaseSpace:
 			np.savez(wdir+strint(i),"w", x=xs, p=ps)
 			
 	def npz2plt(self, wdir=""):
+		# Read .npz file and print it
 		ax = plt.axes()
 		ax.set_xlim(-self.xmax/2.0,self.xmax/2.0)
 		ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)

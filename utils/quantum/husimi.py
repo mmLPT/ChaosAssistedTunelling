@@ -2,39 +2,40 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
-
-import time
-
 from utils.quantum.grid import *
 from utils.quantum.wavefunction import *
 
-# The following class computes 
+# This scripts contains: 1 class
+# + class : Husimi
 
 class Husimi:
-	def __init__(self, grid, scale=3.0,xmax=0,pmax=2*np.pi):
+	# The Husimi class provides a tool to generate husimi representation
+	# of wavefunctions. It is build from a grid, so you can generate 
+	# representation of differents wave functions from a single object
+	def __init__(self, grid, scale=3.0,pmax=2*np.pi):
 		self.grid=grid
-		# husimi grid
-		self.scale=scale # scale for husimi grid
+		self.scale=scale 
+		# Husimi grid is defined over coherent states, but you can  
+		# fix an higher resolution by changing 'scale'
 		self.h=grid.h
 		self.N=grid.N
 		
-		#keep aspect ratio
+		# Sigma of a coherent state with 1:1 aspect ratio
 		self.sigmap=np.sqrt(self.h/2.0)
 		self.sigmax=np.sqrt(self.h/2.0)
 		
-		# Maximum values to plot. You often doesn't need high p representation
-		self.xmax=xmax
-		if self.xmax==0:
-			self.xmax=grid.xmax
+		# Boundaries for plotting
+		self.xmax=grid.xmax
 		self.pmax=pmax
 		
-		# The husimi grid
+		# Building Husimi grid
 		self.Nx=int(self.xmax/self.sigmax*self.scale)
 		self.x=np.linspace(-self.xmax/2.0,self.xmax/2.0,self.Nx)
 		self.Np=int(self.pmax/self.sigmap*self.scale)
 		self.p=np.linspace(-self.pmax/2.0,self.pmax/2.0,self.Np)
 		
-		
+		# The following is a trick : as we are working on a periodic 
+		# grid, we want
 		self.pshift=np.zeros((self.Np,self.N),dtype=np.complex_)
 		pgrid=np.fft.fftshift(grid.p)
 		for ip in range(0,self.Np):
@@ -47,6 +48,8 @@ class Husimi:
 					self.pshift[ip][i]=pgrid[i]-self.N*self.h	
 
 	def getRho(self,wf):
+		# Computes Husimi representation of a given wavefunction
+		# It returns a 1-normalized 2D-density
 		rho=np.zeros((self.Np,self.Nx))
 		psip=np.fft.fftshift(wf.p)
 		for ip in range(0,self.Np):	
@@ -59,12 +62,15 @@ class Husimi:
 		return rho/nrm2
 		
 	def save(self, wf, datafile, title="", convert=True):
+		# Saves the Husimi representation in datafile.npz file
+		# If convert is true, generates datafile.png with npz2png
 		rho=self.getRho(wf)
 		np.savez(datafile,"w", rho=rho,x=self.x,p=self.p)
 		if convert:
 			self.npz2png(datafile, title=title)
 		
 	def npz2png(self, datafile, title=""):
+		# Converts an .npz file to .png file
 		data=np.load(datafile+".npz")
 		rho=data["rho"]
 		x=data["x"]

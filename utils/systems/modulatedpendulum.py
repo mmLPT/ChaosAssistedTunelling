@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
 from utils.quantum.grid import *
 from utils.quantum.quantumoperator import *
 from utils.classical.stroboscopic import *
@@ -8,6 +7,7 @@ from utils.mathtools.periodicfunctions import *
 from utils.systems.potential import *
 from utils.quantum.husimi import *
 
+# This script contains: 3 classes and 3 functions
 
 class PotentialMP(Potential):
 	def __init__(self,e,gamma,f=np.cos):
@@ -26,6 +26,8 @@ class PotentialMP(Potential):
 	
 	def dVdx(self,x,t=0):
 		return self.gamma*(1+self.e*self.f(t))*np.sin(x)
+		
+	# The 4 following functionseee
 		
 	def R1(self):
 		if self.d1>-0.5*np.sqrt(self.a1**2+self.b1**2):
