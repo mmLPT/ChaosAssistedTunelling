@@ -59,7 +59,7 @@ class PotentialMPasym(PotentialMP):
 	def __init__(self,e,gamma,x3,h):
 		PotentialMP.__init__(self,e,gamma)
 		self.x3=x3
-		self.omega1=h**2*(25.0/8113.9)**2/8.0
+		self.omega1= 0.5/262**2 #(h*25.0/8113.9)**2/8.0
 		
 	def Vx(self,x,t=0):
 		return -self.gamma*(1+self.e*self.f(t))*np.cos(x)+0.5*self.omega1*(x-self.x3)**2

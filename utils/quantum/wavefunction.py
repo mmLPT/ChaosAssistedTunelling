@@ -33,21 +33,23 @@ class WaveFunction:
 	def p(self, value):
 		self._p = value	
 	
-	def getx(self): # not tested
+	def getx(self): 
 		self.p2x()
 		return sum(self.grid.x*abs(self.x)**2)
 		
-	def getp2(self): # not tested
+	def getp2(self): 
 		return sum(self.grid.p**2*abs(self.p)**2)
 	
 	def normalize(self):
-		nrm2=sum(abs(self.p)**2)
-		self.p = self.p/np.sqrt(nrm2)
 		self.p2x()
+		nrm=abs(sum(np.conj(self.x)*self.x))
+		self.x = self.x/np.sqrt(nrm)
+		self.x2p()
 		
 	def save(self,datafile):
 		# Export both x/p representation in 'datafile.npz'
 		self.p2x()
+		self.x2p()
 		np.savez(datafile,"w", x=self.grid.x, p=self.grid.p, psix=self.x, psip=np.fft.ifftshift(self.p))
 	
 	# Operators acting on objects
@@ -71,8 +73,14 @@ class WaveFunction:
 		wf=WaveFunction(self.grid)
 		wf.setState("setx",psix=psix)
 		return wf
+		
+	def __truediv__(self,scalar):
+		psix=self.x/scalar
+		wf=WaveFunction(self.grid)
+		wf.setState("setx",psix=psix)
+		return wf
 	
-	def __truediv__(self,other): # wf1/wf2
+	def __mod__(self,other): # wf1%wf2
 		# Get braket <wf1|wf2>
 		return sum(np.conj(self.x)*other.x)
 		

@@ -52,6 +52,50 @@ class QuantumOperator:
 		for i in index:
 			husimi.save(self.eigenvec[i],wdir+"{:05d}".format(i),title=str(np.angle(self.eigenval[i])))
 			#self.eigenvec[i].save(wdir+"/wf/{:05d}".format(i))
+			
+class QuantumImaginaryTimePropagator(QuantumOperator):
+	def __init__(self,grid,potential,hermitian=False,idtmax=1,T0=1):
+		self.potential=potential
+		self.grid=grid
+		self.dt=T0/idtmax
+		a=5.0#e-9
+		m=86.9091835*1.660538921 #e-27
+		hbar=6.62607015/(2*np.pi)  #e-34
+		nuL=8113.9
+		self.g=self.grid.h**2*(hbar*a/(m*nuL)*1.0e-16)
+		#self.g=1.0
+		print(self.g)
+		
+		self.Up=np.zeros(grid.N,dtype=np.complex_)
+		self.Up=np.exp(-(self.dt/grid.h)*(grid.p**2/2))
+		
+	def getGroundState(self,wf):
+		mudiff=1.0
+		wf0x=wf.x
+		mu0=1.0
+
+		while mudiff > 1.0e-8:
+
+
+			wf.x=wf.x*np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x)+self.g*abs(wf.x)**2)/2.0)
+			wf.x2p()
+			wf.p=wf.p*self.Up 
+			wf.p2x() 
+			wf.x=wf.x*np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x)+self.g*abs(wf.x)**2)/2.0)
+			
+			
+			mu=(self.grid.h/self.dt)*np.log(abs(wf0x[int(self.grid.N/2.0)]/wf.x[int(self.grid.N/2.0)]))
+			
+			wf.normalize()
+			
+			print(abs(wf%wf))
+			
+			
+			mudiff=abs(mu-mu0)
+			wf0x=wf.x
+			mu0=mu
+			print(mudiff/(1.0e-8))
+		return wf	
 				
 class QuantumTimePropagator(QuantumOperator):
 	# Time evolution operators

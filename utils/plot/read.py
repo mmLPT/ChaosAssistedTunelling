@@ -8,17 +8,17 @@ import matplotlib.pyplot as plt
 # DIRTY
 
 
-def wf(xmax,path=""):
-	data=np.load(path+".npz")
+def wf(datafile=""):
+	data=np.load(datafile+".npz")
 	x=data["x"]
 	p=data["x"]
 	psix=data["psix"]
 	psip=data["psip"]
 	ax = plt.axes()
-	ax.set_xlim(-xmax/2.0,xmax/2.0)
-	ax.set_ylim(0,0.005)
+	ax.set_xlim(min(x),max(x))
+	ax.set_ylim(0,1.1*max(abs(psix)**2))
 	plt.plot(x,abs(psix)**2)
-	plt.savefig(path+".png", bbox_inches='tight')
+	plt.savefig(datafile+".png", bbox_inches='tight')
 	plt.clf() 
 
 def split(datafile="split",savefig=False):
@@ -42,16 +42,6 @@ def split(datafile="split",savefig=False):
 		plt.clf() 
 	else:
 		plt.show()
-		
-def asym(datafile="asym",savefig=False):
-	data=np.load(datafile+".npz")
-	#plt.xlim(min(data['asym']),max(data['asym']))
-	plt.plot(data['x1'],data['T'],c='blue')
-	plt.plot(data['x1'],data['Tth'],c='red')
-	plt.show()
-	plt.plot(data['asym'],data['T'],c='blue')
-	plt.plot(data['asym'],data['Tth'],c='red')
-	plt.show()
 	
 def projs(datafile):
 	data=np.load(datafile+".npz")
