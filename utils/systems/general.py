@@ -6,14 +6,19 @@ from utils.quantum.quantumoperator import *
 from utils.toolsbox import *
 import utils.plot.read as read
 
-# Classical stroboscopic phase
+# This scripts contains functions that are usable with any system
+
+
 def classical(pot,nperiod,ny0,datafile):
+	# Classical stroboscopic phase
 	cp=ClassicalContinueTimePropagator(pot)
 	sb=StrobosopicPhaseSpace(nperiod,ny0,cp) #,pmax=np.pi)
 	sb.save(datafile)
 	sb.npz2plt(datafile)
 
 def propagate( grid, pot, iperiod, icheck,wdir,T0=1,idtmax=1):
+	# Propagate a wavefunction over one period/one kick/on length
+	# I periodically saves Husimi representation and wf in a .npz file
 	husimi=Husimi(grid)
 	
 	fo=CATFloquetOperator(grid,pot,T0=T0,idtmax=idtmax)

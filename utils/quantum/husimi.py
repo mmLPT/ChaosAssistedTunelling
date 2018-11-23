@@ -9,9 +9,10 @@ from utils.quantum.wavefunction import *
 # + class : Husimi
 
 class Husimi:
-	# The Husimi class provides a tool to generate husimi representation
+	# The Husimi class provides a tool to generate Husimi representation
 	# of wavefunctions. It is build from a grid, so you can generate 
 	# representation of differents wave functions from a single object
+	
 	def __init__(self, grid, scale=3.0,pmax=2*np.pi):
 		self.grid=grid
 		self.scale=scale 
@@ -62,8 +63,8 @@ class Husimi:
 		return rho/nrm2
 		
 	def save(self, wf, datafile, title="", convert=True):
-		# Saves the Husimi representation in datafile.npz file
-		# If convert is true, generates datafile.png with npz2png
+		# Saves the Husimi representation in 'datafile.npz' file
+		# If 'convert' is true, generates 'datafile.png' with npz2png
 		rho=self.getRho(wf)
 		np.savez(datafile,"w", rho=rho,x=self.x,p=self.p)
 		if convert:
@@ -71,18 +72,16 @@ class Husimi:
 		
 	def npz2png(self, datafile, title=""):
 		# Converts an .npz file to .png file
+		
+		# Get data from .npz file
 		data=np.load(datafile+".npz")
 		rho=data["rho"]
 		x=data["x"]
 		p=data["p"]
 		R=rho.max()
-		
+			
+		# Generla settings : tile/axes
 		plt.title(title)
-				
-		levels = MaxNLocator(nbins=100).tick_values(0.0,R)	
-		cmap = plt.get_cmap('Spectral')
-		norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
-		
 		ax = plt.axes()
 		ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)
 		ax.set_xlim(-self.grid.xmax/2.0,self.grid.xmax/2.0)
@@ -94,8 +93,14 @@ class Husimi:
 		"""
 		ax.set_yticks([-np.pi, -np.pi/2.0,0, np.pi/2.0, np.pi])
 		ax.set_yticklabels([r"$-\pi$",r"$-\frac{\pi}{2}$","$0$", r"$\frac{\pi}{2}$",r"$\pi$"])
-
+		
+		# 2D map options
+		levels = MaxNLocator(nbins=100).tick_values(0.0,R)	
+		cmap = plt.get_cmap('Spectral')
+		norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
 		#plt.contourf(x,p,rho, levels=levels,cmap=cmap)
 		plt.pcolormesh(x,p,rho, norm=norm,cmap=cmap)
+		
+		# Saving fig
 		plt.savefig(datafile+".png", bbox_inches='tight')
 		plt.clf() 

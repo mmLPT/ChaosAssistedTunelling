@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Potential:
+	# The class potential is desgined to be herited only
 	def __init__(self):
 		pass
 	def Vx(self,x):

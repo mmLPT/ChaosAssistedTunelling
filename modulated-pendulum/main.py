@@ -11,12 +11,12 @@ from utils.systems.general import *
 import utils.plot.read as read
 	
 	
-N=2048*10 #128+32+16+4+2+1+1
+N=2048 #128+32+16+4+2+1+1
 gamma=0.29
 e=0.35
 h=0.1
 
-grid=Grid(N,h,xmax=20*2*np.pi)
+grid=Grid(N,h)
 pot=PotentialMP(e,gamma)		
 
 
@@ -29,22 +29,22 @@ pot=PotentialMP(e,gamma)
 
 #explore_e_gamma()
 
-#explore_asymetry(grid,e,gamma,wdir="asym/",datafile="data"+str(int(N)))
-#read.asym("asym/data"+str(int(N)))
-pot=PotentialMPasym(e,gamma,0,h)	
-qitp=QuantumImaginaryTimePropagator(grid,pot,T0=4*np.pi,idtmax=3500)
+#explore_N_impact(e,gamma)
+#~ explore_asymetry(grid,e,gamma,wdir="asym/",datafile="data2"+str(int(N)))
+#~ read.asym("asym/data2"+str(int(N)))
+
+
+grid=Grid(N,h,xmax=5*2*np.pi)
+#pot=PotentialMPasym(e,gamma,0,10*(h*25.0)/(2*8113.9))
+pot=PotentialTest()
+qitp=QuantumImaginaryTimePropagator(grid,pot,T0=4*np.pi,idtmax=100000)
 wf=WaveFunction(grid)
 husimi=Husimi(grid)
 wf.setState("diracp")
-wf=3.0*wf
-wf.normalize()
-print(wf//wf)
-#husimi.save(wf,"gs")
-wf.save("wf0")
-read.wf("wf0")
+#wf.setState("coherent",xratio=25.0)
 wf=qitp.getGroundState(wf)
-wf.save("gs")
-read.wf("gs")
+wf.save("gs0")
+read.wf("gs0")
 
 
 

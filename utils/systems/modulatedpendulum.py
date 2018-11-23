@@ -7,7 +7,7 @@ from utils.mathtools.periodicfunctions import *
 from utils.systems.potential import *
 from utils.quantum.husimi import *
 
-# This script contains: 3 classes and 3 functions
+# This script contains:  4 classes and 4 functions
 
 class PotentialMP(Potential):
 	def __init__(self,e,gamma,f=np.cos):
@@ -56,23 +56,38 @@ class PotentialMP(Potential):
 		return self.thetaR1()+np.pi/2.0
 		
 class PotentialMPasym(PotentialMP):
-	def __init__(self,e,gamma,x3,h):
+	# Adding longitudinal confinment to modulated pendulum
+	def __init__(self,e,gamma,x1,omega):
 		PotentialMP.__init__(self,e,gamma)
-		self.x3=x3
-		self.omega1= 0.5/262**2 #(h*25.0/8113.9)**2/8.0
+		self.x1=x1
+		self.omega2= omega**2
 		
-	def Vx(self,x,t=0):
-		return -self.gamma*(1+self.e*self.f(t))*np.cos(x)+0.5*self.omega1*(x-self.x3)**2
+	def Vx(self,x,t=np.pi/2.0):
+		return -self.gamma*(1+self.e*self.f(t))*np.cos(x)+0.5*self.omega2*(x-self.x1)**2
 	
 	def dVdx(self,x,t=0):
-		return self.gamma*(1+self.e*self.f(t))*np.sin(x)+self.omega1*x*(x-self.x1)
+		return self.gamma*(1+self.e*self.f(t))*np.sin(x)+self.omega2*x*(x-self.x1)
+		
+class PotentialTest(Potential):
+	# Adding longitudinal confinment to modulated pendulum
+	def __init__(self):
+		Potential.__init__(self)
+		self.omega=2.0
+		self.x1=0.0
+		
+	def Vx(self,x):
+		return 0.5*self.omega**2*(x-self.x1)**2
 
 class H0(QuantumOperator):
+	# Hamiltonian for unmodulated pendulum. The matric p representation
+	# is build from analytical results
+	
 	def __init__(self,grid, gamma):
 		QuantumOperator.__init__(self,grid)
 		self.gamma=gamma
 		
 	def fillM(self):
+		# Matrix p representation is built from analytical results
 		self.Mrepresentation="p"
 		self.hermitian=True
 		p=np.fft.fftshift(self.grid.p)
@@ -86,9 +101,48 @@ class H0(QuantumOperator):
 					self.M[li][co]=0
 					
 	def getGS(self, x0):
+		# Get the ground state
 		wf=WaveFunction(self.grid)
 		wf.setState("loadp",psip=self.eigenvec[0].p*np.exp(-(1j/self.grid.h)*x0*self.grid.p))
 		return wf
+		
+class QuantumImaginaryTimePropagator(QuantumOperator):
+	def __init__(self,grid,potential,hermitian=False,idtmax=1,T0=1):
+		self.potential=potential
+		self.grid=grid
+		self.dt=T0/idtmax
+		a=5.0#e-9
+		m=86.9091835*1.660538921 #e-27
+		hbar=6.62607015/(2*np.pi)  #e-34
+		nuL=8113.9
+		self.g=self.grid.h**2*(hbar*a/(m*nuL)*1.0e-16)
+		self.g=15000.0
+		self.Up=np.zeros(grid.N,dtype=np.complex_)
+		self.Up=np.exp(-(self.dt/self.grid.h)*(grid.p**2/2))
+		
+	def getGroundState(self,wf):
+		mudiff=1.0
+		wf0x=wf.x
+		mu0=1.0
+
+
+		while mudiff > 1.0e-8:
+			wf.x=wf.x*np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x)+self.g*abs(wf.x)**2)/2.0) #+self.g*abs(wf.x)**2
+			wf.x2p()
+			wf.p=wf.p*self.Up 
+			wf.p2x() 
+			wf.x=wf.x*np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x)+self.g*abs(wf.x)**2)/2.0)
+			
+			mu=(self.grid.h/self.dt)*np.log(abs(wf0x[int(self.grid.N/2.0)]/wf.x[int(self.grid.N/2.0)]))
+			
+			wf.normalizeX()
+		
+			mudiff=abs(mu-mu0)
+			wf0x=wf.x
+			mu0=mu
+			print("norm =",abs(wf%wf),"mudiff=",mudiff/(1.0e-8))
+		return wf	
+		
 """			
 class StrobosopicPhaseSpaceMP(StrobosopicPhaseSpace):
 	def sety0(self):
@@ -104,8 +158,9 @@ class StrobosopicPhaseSpaceMP(StrobosopicPhaseSpace):
 		plt.scatter(R1*np.cos(thetaR1+np.pi),0.5*R1*np.sin(thetaR1+np.pi),s=3**2,marker="o",c="red")
 		plt.scatter(R2*np.cos(thetaR2+np.pi),0.5*R2*np.sin(thetaR2+np.pi),s=3**2,marker="o",c="red")
 		StrobosopicPhaseSpace.npz2plt(self,datadir)
-"""		
-# READY TO USE FUNCITONS
+"""	
+
+# READY TO USE FUNCITONS DIRTY BUT CONVENIENT
 		
 def splitting_with_h( N, h, e, gamma, asym=False, xasym=10*np.pi, datafile="split"):
 	imax=h.shape[0]
@@ -141,19 +196,20 @@ def explore_e_gamma(N):
 			splitting_with_h( N, ht, e, gamma, datafile=datafile)
 			
 def explore_asymetry(grid,e,gamma,wdir="asym/",datafile="data"):
-
+	# Regarde comment evolue la periode
 	npoints=11
 	x1=np.linspace(-10*2*np.pi,10*2*np.pi,npoints)
 	
 	asym=np.zeros(npoints)
 	T=np.zeros(npoints)
+	Tth=np.zeros(npoints)
 	qE=np.zeros(npoints)
 	
 	husimi=Husimi(grid)
-	pot=PotentialMP(e,gamma)
-	
+	pot=PotentialMPasym(e,gamma,0,(grid.h*25.0)/(2*8113.9))
 	wfcs=WaveFunction(grid)
 	wfcs.setState("coherent",x0=-pot.x0,xratio=2.0)
+	
 	
 	fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=500)
 	fo.diagonalize()
@@ -161,14 +217,35 @@ def explore_asymetry(grid,e,gamma,wdir="asym/",datafile="data"):
 	T0,qE0=fo.getSplitting()
 
 	for i in range(0,npoints):
-		pot=PotentialMPasym(e,gamma,x1[i],grid.h)
+		
+		pot=PotentialMPasym(e,gamma,x1[i],(grid.h*25.0)/(2*8113.9))
 		asym[i]=abs(pot.Vx(-pot.x0)-pot.Vx(pot.x0))/(4*np.pi)
 		
-		fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=2500)
+		fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=500)
 		fo.diagonalize()
 		fo.findTunellingStates(wfcs)
 		T[i],qE[i]=fo.getSplitting()
+		Tth[i]=T0/np.sqrt(1+(asym[i]/qE0)**2)
 		#fo.saveTunellingStates(husimi,wdir+"evec/"+strint(i))
 
-		print(T[i],T0/np.sqrt(1+(asym[i]/qE0)**2), asym[i])
-	np.savez(wdir+datafile,"w", x1=x1, asym=asym, T=T, qE=qE)
+		print("T=",T[i],"Tth=",Tth[i],"asym=", asym[i])
+	np.savez(wdir+datafile,"w", x1=x1, asym=asym, T=T, qE=qE, Tth=Tth)
+
+def explore_N_impact(e,gamma):
+	# Pour voir l impact de N sur le taux tunnel
+	# conclusion : si x=[A,A[ ok si x=[A,A] ca deconne
+	pot=PotentialMP(e,gamma)
+	
+	h=0.1
+	for N in [64,128,256,512,1024,2048]:
+		grid=Grid(N,h)
+		
+		wfcs=WaveFunction(grid)
+		wfcs.setState("coherent",x0=-pot.x0,xratio=2.0)
+		fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=500)
+		fo.diagonalize()
+		fo.findTunellingStates(wfcs)
+		T,qE=fo.getSplitting()
+		
+		print("T=",T,"N=",N)
+

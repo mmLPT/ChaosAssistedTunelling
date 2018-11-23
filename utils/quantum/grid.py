@@ -1,30 +1,28 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# This script furnishes : one class
-
-# ==================================================================== #
-# Grid's class furnish an 1D grid in x and p, that can be used with 
-# numpy FFT, wavefunction.
-# One important thing to note is that numpy FFT work with both :
-# ==================================================================== #
+# This script contains : 1 class
+# + class : grid
 
 class Grid:
+	# The Grid class provides a grid adapted to class WaveFunction
+	# Id est, the p array is set to be FFT compatible and well
+	# dimenzioned in h. All attributes are properties.
 	def __init__(self,N,h,xmax=2*np.pi):
-		self.N=N
-		self.h=h
-		self.xmax=xmax
-		#~ self.x=(np.arange(self.N)-0.5*self.N)*self.xmax/self.N
-		#~ self.dx=self.xmax/self.N
-		#~ self.p=np.fft.fftfreq(self.N,self.dx)*2*np.pi*self.h 	
-		#~ self.dp=0.5*h/self.dx
-		#~ self.phaseshift=np.exp(-(1j/self.h)*(self.xmax/2.0)*self.p)
-		self.x=np.linspace(-xmax/2.0,xmax/2.0,N)
-		self.dx=self.xmax/self.N
+		self.h=h # hbar value
+		
+		self.N=N # Number of points in each space x/p
+		self.xmax=xmax # Interval will be [-xmax2.0,xmax/2.0[
+		self.x,self.dx=np.linspace(-xmax/2.0,xmax/2.0,N,endpoint=False,retstep=True)
+		self.x=self.x+self.dx/2.0
 		self.p=np.fft.fftfreq(self.N,self.dx)*2*np.pi*self.h 	
 		self.dp=0.5*h/self.dx
-		self.phaseshift=np.exp(-(1j/self.h)*(self.xmax/2.0)*self.p)
 		
+		# A p-defined WaveFunction, don't know about x interval, only about 
+		# it width, then to center a p-defined wf, you have to multiply
+		# by the followinf factor
+		self.phaseshift=np.exp(-(1j/self.h)*((self.xmax-self.dx)/2.0)*self.p)
+	
 	@property
 	def x(self):
 		return self._x
