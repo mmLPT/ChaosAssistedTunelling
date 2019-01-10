@@ -61,8 +61,8 @@ class QuantumTimePropagator(QuantumOperator):
 	# It relies on splliting method with H = p**2/2m + V(x,t)
 	# It can be use for :
 	# - periodic V(x,t) -> dt=T0/idtmax
-	# - time-indepent V(x) -> 
-	# - periodic kicked system : T0 = 1
+	# - time-indepent V(x) -> T0=1, idtmax="n" 
+	# - periodic kicked system : T0 = 1, idtmax=1
 	
 	# /!\ Not adapted to non linear terms such a Gross-Pitaevskii
 	def __init__(self,grid,potential,idtmax=1,T0=1):
@@ -76,6 +76,7 @@ class QuantumTimePropagator(QuantumOperator):
 		
 		# In order to gain time in propagation, we pre-compute 
 		# splitted propagator that appears to be constant most of time
+		# NB: if you have non interactions terms, this doesn't work
 		self.Up=np.zeros(self.N,dtype=np.complex_)
 		self.Up=np.exp(-(1j/grid.h)*(grid.p**2/4)*self.dt)
 		self.Ux=np.zeros((idtmax,self.N),dtype=np.complex_)
@@ -86,7 +87,7 @@ class QuantumTimePropagator(QuantumOperator):
 			self.Ux[0]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x))*self.dt)
 			
 	def propagate(self,wf):
-		# Propagate over one period or over a 
+		# Propagate over one period/kick/arbitray time 
 		for idt in range(0,self.idtmax):
 			wf.p=wf.p*self.Up 
 			wf.p2x() 
@@ -106,31 +107,112 @@ class QuantumTimePropagator(QuantumOperator):
 			self.M[:,i]=wf.x 
 			
 class CATFloquetOperator(QuantumTimePropagator):
-	# This class is specific for CAT purpose :
+	# This class is specific for CAT purpose:
+	# WIP: a bit dirty.
+	def __init__(self,grid,potential,idtmax=1,T0=1):
+		QuantumTimePropagator.__init__(self,grid,potential,idtmax=idtmax,T0=T0)
+		self.proj=np.zeros(grid.N)
+		self.qE=np.zeros(grid.N) # quasi energies
+		self.index=np.array([],dtype=int)
+		self.iqgs=0 #quasi ground state
+		self.iqfes=0 # quasi first excited state
+	
 	def findTunellingStates(self,wf):
 		# Find the two states that tunnels given a wavefunction
 		
-		# Check the overlap
-		proj=np.zeros(self.N)
+		# Check the overlap with the given wave function
 		for i in range(0,self.N):
-			proj[i]=self.eigenvec[i]//wf
-		
-		# Find the two states that tunnel
-		max1=np.argmax(proj)
-		proj[max1]=0.0
-		max2=np.argmax(proj)
-		self.max1=max1
-		self.max2=max2	
+			self.proj[i]=self.eigenvec[i]//wf
+			self.qE[i]=-np.angle(self.eigenval[i])*(self.h/self.T0)
+			if self.proj[i]>0.01:
+				self.index=np.append(self.index,[i])
 			
-	def getSplitting(self):
-		# Get the quasi-energy splitting and the tunneling period
-		phi=abs(np.angle(self.eigenval[self.max1])-np.angle(self.eigenval[self.max2]))
-		phi=min(phi,abs(phi-2*np.pi)) # Quasi energies are defined mod 2 pi
-		T=2*np.pi/phi 
-		qE=self.h*phi/self.T0
-		return T, qE
+		# Find the two states that tunnels
+		max1=np.argmax(self.proj)
+		proj1=self.proj[max1]
+		self.proj[max1]=0.0
+		max2=np.argmax(self.proj)
+		self.proj[max1]=proj1
 		
-	def saveTunellingStates(self,husimi,wdir):
-		# Save husimi representation of tunneling states
-		husimi.save(self.eigenvec[self.max1],wdir+"estate1",title=str(np.angle(self.eigenval[self.max1])))
-		husimi.save(self.eigenvec[self.max2],wdir+"estate2",title=str(np.angle(self.eigenval[self.max2])))
+		# Eigenvectors are ordered by quasi-energies qE1<qE2
+		# This can be differents to projections ordering!
+		
+		# Check basic ordering
+		if self.qE[max1]<self.qE[max2]:
+			self.iqgs=max1
+			self.iqfes=max2
+		else:
+			self.iqgs=max2
+			self.iqfes=max1
+		
+		# Check if this is not a 
+		if self.diffqE1qE2(self.iqfes,self.iqgs)<0:
+			self.iqfes,self.iqgs=self.iqgs,self.iqfes
+			
+	def getTunnelingPeriod(self):
+		# Get the tunneling period
+		return 2*np.pi*self.h/(self.T0*(self.diffqE1qE2(self.iqfes,self.iqgs)))
+		
+	def getQEs(self,n):
+		# Returns the n states with the largest projections on coherent states
+		qes=np.zeros(n)
+		ind=np.flipud(np.argsort(self.proj))
+		for i in range(0,n):
+			qes[i]=self.qE[ind[i]]
+		return qes	
+		
+	def getQE(self,i0):
+		# Returns either the quasi-energy of quasi-ground state or quasi-first excited state
+		if i0==0:
+			i=self.iqgs
+		else:
+			i=self.iqfes
+		return self.qE[i]
+		
+	def getEvec(self,i0):
+		# Same as getQE but returns the state instead of quasi energy
+		if i0==0:
+			i=self.iqgs
+		else:
+			i=self.iqfes
+		return self.eigenvec[i]
+			
+	def getQETh(self,i0,pot):
+		# Returns expected value of quasi-energies according to 
+		# perturbation theory up to 3rd order for a given potential
+		V00=pot.braketVxasym(self.eigenvec[0],self.eigenvec[0])
+		V11=pot.braketVxasym(self.eigenvec[1],self.eigenvec[1])
+		V01=pot.braketVxasym(self.eigenvec[0],self.eigenvec[1])
+		V10=pot.braketVxasym(self.eigenvec[1],self.eigenvec[0])
+		E0mE1=self.diffqE1qE2(0,1)
+		E1mE0=-E0mE1
+		
+		if i0==0:
+			e0=self.qE[self.iqgs]
+			e1=abs(V00)
+			e2=abs(V01)**2/E0mE1
+			e3=abs(V01)**2/(E0mE1)**2*(abs(V11)-abs(V00))
+			#e4=abs(V01)**2*abs(V11)**2/E0mE1**3-e2*abs(V10)**2/E0mE1**4-2*abs(V00)*abs(V01)**2*abs(V11)/E0mE1**3+abs(V00)**2*abs(V01)**2/E0mE1**3
+		elif i0==1:
+			e0=self.qE[self.iqfes]
+			e1=abs(V11)
+			e2=abs(V01)**2/E1mE0
+			e3=abs(V01)**2/(E0mE1)**2*(abs(V00)-abs(V11))
+			#e4=abs(V11)**2*abs(V00)**2/E1mE0**3-e2*abs(V10)**2/E1mE0**4-2*abs(V11)*abs(V01)**2*abs(V00)/E1mE0**3+abs(V11)**2*abs(V01)**2/E1mE0**3
+		
+		e=e0 +e1 +e2 #+e3
+		return e	
+		
+	def diffqE1qE2(self,i1,i2):
+		# This returns the difference on a circle
+		qE1=self.qE[i1]
+		qE2=self.qE[i2]
+		dE=np.pi*(self.h/self.T0)
+		diff=qE1-qE2
+		if diff>dE:
+			return diff-2*dE
+		elif diff<-dE:
+			return diff+2*dE
+		else:
+			return diff
+		

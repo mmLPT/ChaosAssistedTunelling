@@ -4,6 +4,7 @@ from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 from utils.quantum.grid import *
 from utils.quantum.wavefunction import *
+from utils.plot.latex import *
 
 # This scripts contains: 1 class
 # + class : Husimi
@@ -72,7 +73,7 @@ class Husimi:
 		
 	def npz2png(self, datafile, title=""):
 		# Converts an .npz file to .png file
-		
+		setLatex()
 		# Get data from .npz file
 		data=np.load(datafile+".npz")
 		rho=data["rho"]
@@ -83,23 +84,24 @@ class Husimi:
 		# Generla settings : tile/axes
 		plt.title(title)
 		ax = plt.axes()
-		ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)
+		#ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)
+		ax.set_ylim(-1.0,1.0)
 		ax.set_xlim(-self.grid.xmax/2.0,self.grid.xmax/2.0)
 		ax.set_aspect('equal')
 		"""
 		ax.set_xticks([-pi, -pi/2.0,0, pi/2.0, pi])
 		ax.set_xticklabels([r"$-\pi$",r"$-\frac{\pi}{2}$","$0$", r"$\frac{\pi}{2}$",r"$\pi$"])
-		
-		"""
 		ax.set_yticks([-np.pi, -np.pi/2.0,0, np.pi/2.0, np.pi])
 		ax.set_yticklabels([r"$-\pi$",r"$-\frac{\pi}{2}$","$0$", r"$\frac{\pi}{2}$",r"$\pi$"])
+		"""
+		
 		
 		# 2D map options
 		levels = MaxNLocator(nbins=100).tick_values(0.0,R)	
-		cmap = plt.get_cmap('Spectral')
+		cmap = plt.get_cmap('binary')
 		norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
-		#plt.contourf(x,p,rho, levels=levels,cmap=cmap)
-		plt.pcolormesh(x,p,rho, norm=norm,cmap=cmap)
+		plt.contourf(x,p,rho, levels=levels,cmap=cmap)
+		#plt.pcolormesh(x,p,rho, norm=norm,cmap=cmap)
 		
 		# Saving fig
 		plt.savefig(datafile+".png", bbox_inches='tight')

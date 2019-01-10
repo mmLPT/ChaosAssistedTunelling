@@ -35,6 +35,14 @@ class WaveFunction:
 	def p(self, value):
 		# Set <p|psi> from complex N-array
 		self._p = value	
+		
+	@property   
+	def grid(self):
+		return self._grid	
+
+	@grid.setter
+	def grid(self, value):
+		self._grid = value	
 	
 	def setState(self, state,x0=0.0,i0=0,psix=0,psip=0,xratio=1.0,datafile=""): 
 		# Commons physical states are implemented
@@ -90,28 +98,38 @@ class WaveFunction:
 		# wf1+wf2 <-> |wf1>+|wf2>
 		psix=self.x+other.x
 		wf=WaveFunction(self.grid)
-		wf.setState("setx",psix=psix)
+		wf.x=psix
+		wf.x2p()
+		return wf
+		
+	def __sub__(self,other): 
+		# wf1+wf2 <-> |wf1>+|wf2>
+		psix=self.x-other.x
+		wf=WaveFunction(self.grid)
+		wf.x=psix
+		wf.x2p()
 		return wf
 		
 	def __rmul__(self,scalar): 
 		# a*wf <-> a|wf>
 		psix=self.x*scalar
 		wf=WaveFunction(self.grid)
-		wf.setState("setx",psix=psix)
+		wf.x=psix
+		wf.x2p()
 		return wf
 	
 	def __mul__(self,scalar):
 		# wf*a <-> a|wf>
 		psix=self.x*scalar
-		wf=WaveFunction(self.grid)
-		wf.setState("setx",psix=psix)
+		wf.x=psix
+		wf.x2p()
 		return wf
 		
 	def __truediv__(self,scalar): 
 		# wf/a <-> |wf>/a
 		psix=self.x/scalar
-		wf=WaveFunction(self.grid)
-		wf.setState("setx",psix=psix)
+		wf.x=psix
+		wf.x2p()
 		return wf
 	
 	def __mod__(self,other): 
@@ -123,6 +141,17 @@ class WaveFunction:
 		return abs(sum(np.conj(self.x)*other.x))**2
 		
 	# === I/O ==========================================================
+	def isSymetricInX(self,sigma=0.01):
+		mwf=WaveFunction(self.grid)
+		psix=np.zeros(self.grid.N,dtype=np.complex_)
+		for i in range(0,self.grid.N):
+			psix[i]=self.x[self.grid.N-1-i]
+		mwf.x=psix
+		if sum(abs((mwf-self).x)**2) < sigma:
+			return True
+		else:
+			return False
+	
 	def getx(self): 
 		# Get <psi|x|psi>
 		return sum(self.grid.x*abs(self.x)**2)
