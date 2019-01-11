@@ -19,8 +19,12 @@ class PotentialMP(Potential):
 		self.f=f # modulation waveform
 		self.a1=getFourierCoefficient("a",1,self.f)
 		self.b1=getFourierCoefficient("b",1,self.f)
-		self.d1=(self.gamma-0.25)/(self.e*self.gamma)
-		self.x0=self.R1()
+		if gamma==0:
+			self.d1=0.0
+			self.x0=1.25
+		else:
+			self.d1=(self.gamma-0.25)/(self.e*self.gamma)
+			self.x0=self.R1()
 		self.isTimeDependent=True
 		
 	def Vx(self,x,t=np.pi/2.0):
@@ -114,7 +118,6 @@ class QuantumImaginaryTimePropagator(QuantumOperator):
 		self.dt=T0/idtmax
 		
 		self.g=g
-		self.g=self.g*self.grid.N/(self.grid.xmax)
 		self.Up=np.zeros(grid.N,dtype=np.complex_)
 		self.Up=np.exp(-(self.dt/self.grid.h)*(grid.p**2/2))
 		
@@ -124,14 +127,13 @@ class QuantumImaginaryTimePropagator(QuantumOperator):
 		return np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x)+self.g*abs(wfx)**2)/2.0)
 		
 	def getGroundState(self,wf):
-		
-		print("===========",self.g)
 		mudiff=1.0
 		wf0x=wf.x
 		mu=1.0
 
 		i=0
 		while mu > self.muerrorref:
+			
 			wf.x=wf.x*self.Ux(wf.x)
 			wf.x2p()
 			wf.p=wf.p*self.Up 
@@ -140,13 +142,13 @@ class QuantumImaginaryTimePropagator(QuantumOperator):
 			
 			wf.normalizeX()
 			
-			mu=(1.0-abs(sum(np.conj(wf0x)*wf.x))**2)/self.dt
-		
-			#mudiff=abs(mu-mu0)
-			wf0x=wf.x
-			#mu0=mu
-			print("norm =",abs(wf//wf),"mudiff=",mu/self.muerrorref)
+			mu=(1.0-abs(sum(np.conj(wf.x)*wf0x)*self.grid.xmax/self.grid.N)**2)/self.dt
+
+			if i%100==0:
+				print("norm =",abs(wf%wf),"mudiff=",mu/self.muerrorref)
+				
 			i+=1
+			wf0x=wf.x
 		print("Converged in ",i,"iterations with dt=",self.dt)
 		return wf	
 				

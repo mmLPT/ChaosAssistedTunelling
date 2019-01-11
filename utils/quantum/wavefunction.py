@@ -76,13 +76,13 @@ class WaveFunction:
 			
 	def normalizeX(self):
 		# Normalize <x|psi>
-		nrm=abs(sum(np.conj(self.x)*self.x))
+		nrm=abs(sum(np.conj(self.x)*self.x))*self.grid.intweight
 		self.x = self.x/np.sqrt(nrm)
 		
-	def normalizeP(self):
-		# Normalize <p|psi>
-		nrm=abs(sum(np.conj(self.p)*self.p))
-		self.p = self.p/np.sqrt(nrm)
+	#~ def normalizeP(self):
+		#~ # Normalize <p|psi>
+		#~ nrm=abs(sum(np.conj(self.p)*self.p))
+		#~ self.p = self.p/np.sqrt(nrm)
 		
 	# === Switching representation x <-> p =============================
 	def p2x(self):
@@ -134,11 +134,11 @@ class WaveFunction:
 	
 	def __mod__(self,other): 
 		# wf1%wf2 <-> <wf1|wf2>
-		return sum(np.conj(self.x)*other.x)
+		return sum(np.conj(self.x)*other.x)*self.grid.intweight
 		
 	def __floordiv__(self,other): 
 		# wf1//wf2 <-> |<wf1|wf2>|^2
-		return abs(sum(np.conj(self.x)*other.x))**2
+		return abs(sum(np.conj(self.x)*other.x)*self.grid.intweight)**2
 		
 	# === I/O ==========================================================
 	def isSymetricInX(self,sigma=0.01):
@@ -154,11 +154,11 @@ class WaveFunction:
 	
 	def getx(self): 
 		# Get <psi|x|psi>
-		return sum(self.grid.x*abs(self.x)**2)
+		return sum(self.grid.x*abs(self.x)**2*self.grid.intweight)
 		
 	def getp2(self): 
 		# Get <psi|p^2|psi>
-		return sum(self.grid.p**2*abs(self.p)**2)
+		return sum(self.grid.p**2*abs(self.p)**2*self.grid.intweight)
 	
 	def save(self,datafile):
 		# Export both x/p representation in 'datafile.npz'

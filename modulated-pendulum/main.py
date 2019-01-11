@@ -20,7 +20,7 @@ grid=Grid(N,h)
 #f=PeriodicFunctions(phase=np.pi)
 pot=PotentialMP(e,gamma)
 
-compute=False
+compute=True
 read=True
 
 #~ modesbasic.classical(pot,nperiod=100,ny0=25,wdir="classical-trajectories/",compute=compute)
@@ -31,9 +31,9 @@ read=True
 #~ modesxconfinment.perturbation_theory(grid,e,gamma,compute=compute=,read=read)
 #~ modesxconfinment.track_crossing(N=64, e=0.315, gamma=0.290, hmin=0.298, hmax=0.302,datafile="data/track_crossing4")
 #~ modesxconfinment.check_T_with_confinment(imax=220,e=e,gamma=gamma)
-#~ modesxconfinment.symetry_of_gs_with_h(N=64, e=0.315, gamma=0.290, datafile="data/croisement3",compute=compute=,read=read)
+#~ modesxconfinment.symetry_of_gs_with_h(N=64, e=0.315, gamma=0.290, datafile="data/croisement3",compute=compute,read=read)
 
-#~ modesquasimomentum.imaginary()
+modesquasimomentum.imaginary()
 
 
 

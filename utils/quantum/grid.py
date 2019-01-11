@@ -17,6 +17,7 @@ class Grid:
 		self.x=self.x+self.dx/2.0
 		self.p=np.fft.fftfreq(self.N,self.dx)*2*np.pi*self.h 	
 		self.dp=0.5*h/self.dx
+		self.intweight=self.xmax/self.N
 		
 		# A p-defined WaveFunction, don't know about x interval, only about 
 		# it width, then to center a p-defined wf, you have to multiply
@@ -70,3 +71,11 @@ class Grid:
 	@phaseshift.setter
 	def phaseshift(self, value):
 		self._phaseshift = value
+		
+	@property
+	def intweight(self):
+		return self._intweight
+		
+	@intweight.setter
+	def intweight(self, value):
+		self._intweight = value
