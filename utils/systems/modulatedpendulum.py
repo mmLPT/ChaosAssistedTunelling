@@ -81,6 +81,28 @@ class PotentialMPasym(PotentialMP):
 	def braketVxasym(self,wf1,wf2):
 		# Returns <wf1|Vxasym|wf2>
 		return sum(np.conj(wf1.x)*self.Vxasym(wf1.grid.x)*wf2.x)
+		
+		
+#~ class PotentialMPasym(PotentialHO):
+	#~ # Adding longitudinal confinment to modulated pendulum
+	#~ def __init__(self,e,gamma,x1,omega):
+		#~ PotentialMP.__init__(self,e,gamma)
+		#~ self.x1=x1
+		#~ self.omega2= omega**2 #(grid.h*25.0)/(2*8113.9)
+		
+	#~ def Vx(self,x,t=np.pi/2.0):
+		#~ return PotentialMP.Vx(self,x,t)+self.Vxasym(x)
+	
+	#~ def dVdx(self,x,t=np.pi/2.0):
+		#~ return PotentialMP.Vx(self,x,t)+self.omega2*(x-self.x1)
+		
+	#~ def Vxasym(self,x):
+		#~ # Returns the non-symetric contribution of potential
+		#~ return 0.5*self.omega2*(x-self.x1)**2
+		
+	#~ def braketVxasym(self,wf1,wf2):
+		#~ # Returns <wf1|Vxasym|wf2>
+		#~ return sum(np.conj(wf1.x)*self.Vxasym(wf1.grid.x)*wf2.x)
 
 class H0(QuantumOperator):
 	# Hamiltonian for unmodulated pendulum. The matric p representation
@@ -121,7 +143,7 @@ class QuantumImaginaryTimePropagator(QuantumOperator):
 		self.Up=np.zeros(grid.N,dtype=np.complex_)
 		self.Up=np.exp(-(self.dt/self.grid.h)*(grid.p**2/2))
 		
-		self.muerrorref=1.0e-10
+		self.muerrorref=1.0e-12
 		
 	def Ux(self, wfx):
 		return np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x)+self.g*abs(wfx)**2)/2.0)
@@ -142,7 +164,7 @@ class QuantumImaginaryTimePropagator(QuantumOperator):
 			
 			wf.normalizeX()
 			
-			mu=(1.0-abs(sum(np.conj(wf.x)*wf0x)*self.grid.xmax/self.grid.N)**2)/self.dt
+			mu=(1.0-abs(sum(np.conj(wf.x)*wf0x)*self.grid.intweight)**2)/self.dt
 
 			if i%100==0:
 				print("norm =",abs(wf%wf),"mudiff=",mu/self.muerrorref)

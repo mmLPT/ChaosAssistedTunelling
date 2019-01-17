@@ -10,6 +10,16 @@ from utils.systems.general import *
 #from utils.mathtools.periodicfunctions import *
 import utils.plot.read as read
 
+def convert(s,nu):
+	hbar=1.0545718 #e-34
+	u=1.660538921 #e-27
+	m=86.909180527*u 
+	d=532.0 #e-9
+	nuL=(np.pi*hbar)/(m*d**2)*10**(11)
+	gamma=s*(nuL/nu)**2
+	heff=2*(nuL/nu)
+	return gamma, heff
+
 def classical(pot,nperiod=100,ny0=20,wdir="classical/",compute=True):
 	# If compute, is true, then it generate, save and plot SPS for a 
 	# given MP potential. Otherwhise it simply plot SPS from wdir/

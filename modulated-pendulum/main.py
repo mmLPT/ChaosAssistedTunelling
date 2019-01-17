@@ -11,7 +11,7 @@ from utils.classical import *
 from utils.systems.modulatedpendulum import *
 import utils.plot.read as read
 
-N=128
+N=64*2
 h=0.1 #0.25
 e=0.300
 gamma=0.295
@@ -33,7 +33,16 @@ read=True
 #~ modesxconfinment.check_T_with_confinment(imax=220,e=e,gamma=gamma)
 #~ modesxconfinment.symetry_of_gs_with_h(N=64, e=0.315, gamma=0.290, datafile="data/croisement3",compute=compute,read=read)
 
-modesquasimomentum.imaginary()
+#~ modesquasimomentum.imaginary()
+gamma, h = modesbasic.convert(s=27.53, nu=70.8*10**3)
+e=0.44
+#~ pot=PotentialMP(e,gamma)
+#~ grid=Grid(N,h)
+#~ x0=0.5*np.pi
+#~ modesquasimomentum.free_prop_averaged(grid,pot,x0)
+#modesquasimomentum.imaginary(gamma,e,h)
+
+modesquasimomentum.true_full_sim()
 
 
 

@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 from utils.quantum.grid import *
 
@@ -63,7 +64,7 @@ class WaveFunction:
 			
 		elif state=="diracp":
 			# Set <p|psi> = delta(p-p[i0])
-			self.p=np.zeros(self.grid.N)
+			self.p=np.zeros(grid.N,dtype=np.complex_)
 			self.p[i0]=1.0
 			self.p=self.p*self.grid.phaseshift
 			self.p2x()
@@ -74,10 +75,24 @@ class WaveFunction:
 			self.x=data['psix']
 			self.x2p()
 			
+		elif state=="random":
+			self.x=np.zeros(self.grid.N,dtype=np.complex_)
+			for i in range(0,self.grid.N):
+				a=random.randint(0,101)
+				b=random.randint(0,101)
+				self.x[i]=complex(a,b)
+			self.normalizeX()
+			self.x2p()	
+			
+			
 	def normalizeX(self):
 		# Normalize <x|psi>
 		nrm=abs(sum(np.conj(self.x)*self.x))*self.grid.intweight
 		self.x = self.x/np.sqrt(nrm)
+		
+	def shiftX(self,x0):
+		self.x=np.roll(self.x, self.grid.getNforXshift(x0))
+		self.x2p()
 		
 	#~ def normalizeP(self):
 		#~ # Normalize <p|psi>
@@ -163,3 +178,23 @@ class WaveFunction:
 	def save(self,datafile):
 		# Export both x/p representation in 'datafile.npz'
 		np.savez(datafile,"w", x=self.grid.x, p=self.grid.p, psix=self.x, psip=np.fft.ifftshift(self.p))
+		
+	def savePNGp(self,datafile):
+		ax = plt.gca()
+		p0=max(self.grid.p)
+		psip2=abs(np.fft.ifftshift(self.p))**2
+		ax.set_xlim(-p0,p0)
+		ax.set_ylim(0.0,1.1*max(psip2))
+		plt.plot(self.grid.p,psip2)
+		plt.savefig(datafile+".png", bbox_inches='tight',dpi=1000)
+		plt.clf()
+		
+	def savePNGx(self,datafile,maxx0=0.1):
+		ax = plt.gca()
+		x0=max(self.grid.x)
+		psix2=abs(self.x)**2
+		ax.set_xlim(-x0/2.0,x0/2.0)
+		ax.set_ylim(0.0,maxx0)
+		plt.plot(self.grid.x,psix2)
+		plt.savefig(datafile+".png", bbox_inches='tight',dpi=1000)
+		plt.clf()

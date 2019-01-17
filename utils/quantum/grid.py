@@ -17,12 +17,18 @@ class Grid:
 		self.x=self.x+self.dx/2.0
 		self.p=np.fft.fftfreq(self.N,self.dx)*2*np.pi*self.h 	
 		self.dp=0.5*h/self.dx
-		self.intweight=self.xmax/self.N
+		self.intweight=(self.xmax-self.dx)/self.N
+		
 		
 		# A p-defined WaveFunction, don't know about x interval, only about 
 		# it width, then to center a p-defined wf, you have to multiply
 		# by the followinf factor
 		self.phaseshift=np.exp(-(1j/self.h)*((self.xmax-self.dx)/2.0)*self.p)
+	
+	
+	def getNforXshift(self,x0):
+		# Return the index for shifting
+		return int(x0/self.dx)
 	
 	@property
 	def x(self):

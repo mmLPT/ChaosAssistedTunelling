@@ -11,13 +11,22 @@ from utils.systems.general import *
 import utils.plot.read as read
 import modesbasic
 
-# Purpose of these modes is to study the
+# The following modes make possible to study the influence of the confinement
+# in the x direction. The study are made on a single celle, with a shifted
+# harmonic potential: V(x)=1/2*omega^2*(x-x1)^2 
+# The nondimenzionalization gives omega =(grid.h*25.0)/(2*8113.9)
+# The way the potential class is build, forces us to gives this information
+# to the constructor since it depend on heff (that usually vary).
 
 			
 def perturbation_theory(grid,e,gamma,datafile="data/perturbation", compute=False, read=True):
 	
+	# This mode is used to study the prediction of the perturbation theory
+	# on tunneling period and quasi-energies, versus the computed one.
+	# The floquet operator is diagonalized for different value of shift
+	# (for the harmonic perturbation)
+	
 	if(compute):
-		
 		# Grid for x1 (shift of harmonic perturbation)
 		ncellmax=20
 		npoints=31
@@ -29,43 +38,53 @@ def perturbation_theory(grid,e,gamma,datafile="data/perturbation", compute=False
 		qE=np.zeros((npoints,2)) # Quasi-energies from floquet diagonalization
 		qEth=np.zeros((npoints,2))# Quasi-energies from perturbation  theory
 		
+		# Unperturbed harmonic potential
 		pot0=PotentialMP(e,gamma)
 		
+		# Coherent states localized on left (m) and right (p)
 		wfcsp=WaveFunction(grid)
 		wfcsp.setState("coherent",x0=pot0.x0,xratio=2.0)
-		
 		wfcsm=WaveFunction(grid)
 		wfcsm.setState("coherent",x0=-pot0.x0,xratio=2.0)
 		
-		# Initial state
+		# Findind initial tunneling states that will be used to compute
+		# perturbation theory expectation later
 		fo0=CATFloquetOperator(grid,pot0,T0=4*np.pi,idtmax=500)
 		fo0.diagonalize()
 		fo0.findTunellingStates(wfcsp)
 
 		for i in range(0,npoints):
 			
+			# Creation of an operator, based on an asymetric potential
 			pot=PotentialMPasym(e,gamma,x1[i],(grid.h*25.0)/(2*8113.9))
-			
 			fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=500)
+			
+			# Determine the tunneling states
 			fo.diagonalize()
-			if x1[i]>0.0:
+			if x1[i]>0.0: # This was used for large value of perturbation to avoid non-symetric plot
 				fo.findTunellingStates(wfcsp)
 			else:
 				fo.findTunellingStates(wfcsm)
 				
-				
+			# Get the tunneling period and the quasi-energies for the
+			# 2 levels that are tunneling
 			T[i]=fo.getTunnelingPeriod()
 			qE[i]=fo.getQE(0),fo.getQE(1)
 
+			# Get expected period/quasi-energies from perturbation theory
 			qEth[i]=fo0.getQETh(0,pot),fo0.getQETh(1,pot)
 			Tth[i]=0.5*grid.h/(qEth[i][1]-qEth[i][0])
 
+			# Console output
 			print("x=",x1[i],(qE[i][0]-qEth[i][0])/qE[i][0],(qE[i][1]-qEth[i][1])/qE[i][1])
 			print("T-Tth/Tth",abs(Tth[i]-T[i])/Tth[i])
 			
+		# Saving in a datafile
 		np.savez(datafile,"w", x1=x1, T=T, Tth=Tth,qE=qE,qEth=qEth)
 		
 	if(read):
+		# Routine to plot
+		
 		data=np.load("data/perturbation.npz")
 		x1=data['x1']
 		T=data['T']
@@ -83,6 +102,8 @@ def perturbation_theory(grid,e,gamma,datafile="data/perturbation", compute=False
 		plt.show()
 
 def check_T_with_confinment(imax=11, e=0.32, gamma=0.29,N=64, xasym=15*2*np.pi, datafile="data/h_with_asym",compute=False,read=True):
+	
+	# This mode is used to compare the value of
 	
 	if(compute):
 		h=np.linspace(0.19,0.41,imax)
@@ -201,6 +222,9 @@ def symetry_of_gs_with_h(N, e, gamma, datafile="split", compute=False,read=True)
 		plt.show()
 	
 def track_crossing(N, e, gamma, hmin,hmax, datafile="data/track_crossing",compute=False,read=True):	
+	
+	# This mode investigate the energy level 
+	
 	if(compute):
 		pot=PotentialMP(e,gamma)
 		idtmax=500
