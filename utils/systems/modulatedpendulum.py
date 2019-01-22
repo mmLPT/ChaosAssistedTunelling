@@ -8,6 +8,7 @@ from utils.systems.potential import *
 from utils.quantum.husimi import *
 import utils.plot.read as read
 from utils.plot.latex import *
+import modesbasic
 
 # This script contains:  4 classes and 4 functions
 
@@ -70,7 +71,7 @@ class PotentialMPasym(PotentialMP):
 	def __init__(self,e,gamma,x1,h):
 		PotentialMP.__init__(self,e,gamma)
 		self.x1=x1
-		self.omega2= ((h*25.0)/(2*8113.9))**2
+		self.omega2= (modesbasic.getomegax(h))**2
 		
 	def Vx(self,x,t=np.pi/2.0):
 		return PotentialMP.Vx(self,x,t)+self.Vxasym(x)
@@ -87,16 +88,37 @@ class PotentialMPasym(PotentialMP):
 		return sum(np.conj(wf1.x)*self.Vxasym(wf1.grid.x)*wf2.x)
 		
 class PotentialMPasymGP(PotentialMP):
-	# Adding longitudinal confinment to modulated pendulum
-	def __init__(self,e,gamma,x1,h,g):
+	# Longitudinal confinment + GP
+	def __init__(self,e,gamma,x1,h):
 		PotentialMP.__init__(self,e,gamma)
-		self.x1=x1
-		self.omega2=((h*25.0)/(2*8113.9))**2
+		self.omega2=(modesbasic.getomegax(h))**2
 		self.isGP=True
-		self.g=0.0
+		self.g=modesbasic.getg(h)
 		
 	def Vx(self,x,wfx,t=np.pi/2.0):
-		return PotentialMP.Vx(self,x,t)+PotentialMP.VGP(wfx)+0.5*self.omega2*(x-self.x1)**2
+		return PotentialMP.Vx(self,x,t)+PotentialMP.VGP(self,wfx)+0.5*self.omega2*x**2
+		
+class PotentialMPloading(PotentialMP):
+	# Longitudinal confinment + GP + modulation off + gamma(t)
+	# This micmics the loading of the optical lattice in experiments
+	def __init__(self,e,gamma,h):
+		PotentialMP.__init__(self,e,gammafinal=0.25)
+		self.omega2=(modesbasic.getomegax(h))**2
+		
+		self.T0=50000
+		self.idtmax=(self.T0*4*np.pi/1000)
+		
+		self.isGP=True
+		self.g=modesbasic.getg(h)
+
+		self.gammafinal=gammafinal
+		self.alphaloading=self.gammafinal/self.T0
+	
+	def gamma(self,t):
+		return self.alpha*t
+		
+	def Vx(self,x,wfx,t):
+		return -self.gamma(t)*np.cos(x)+PotentialMP.VGP(wfx)+0.5*self.omega2*x**2
 
 class H0(QuantumOperator):
 	# Hamiltonian for unmodulated pendulum. The matric p representation
@@ -138,8 +160,7 @@ class StrobosopicPhaseSpaceMP(StrobosopicPhaseSpace):
 		x0=dx*(-0.5+float(i+0.5)/self.ny0)
 		p0=dp*(-0.5+float(j+0.5)/self.ny0)
 		self.y0=np.array([x0,p0])
-		print(x0,p0)
-			
+		print(x0,p0)	
 		
 	def npz2plt(self, potential, datadir=""):
 		R1=potential.R1()

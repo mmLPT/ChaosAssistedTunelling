@@ -11,7 +11,7 @@ from utils.systems.general import *
 import utils.plot.read as readw
 import modesbasic
 
-def free_prop_averaged(grid, pot,x0,compute=True,read=True,wdir="true_sim/averaged-test/"):
+def free_prop_averaged(grid, pot,x0,compute=False,read=True,wdir="true_sim/averaged-test/"):
 	if(compute):
 		iperiod=40
 		icheck=1
@@ -67,6 +67,13 @@ def free_prop_averaged(grid, pot,x0,compute=True,read=True,wdir="true_sim/averag
 		plt.plot(time,xLav/A, c="red")
 		plt.plot(time,xRav/A, c="blue")
 		
+		x1,y1=np.loadtxt("exp-data/pop_non_tunnel.txt",usecols=(0, 1), unpack=True)
+		x2,y2=np.loadtxt("exp-data/pop_tunnel.txt",usecols=(0, 1), unpack=True)
+		
+		plt.scatter(x1,y1)
+		plt.scatter(x2,y2)
+		
+		
 		ax=plt.gca()
 		ax.set_xlabel(r"Périodes")
 		ax.set_ylabel(r"$x gauche et x droite$")
@@ -76,9 +83,9 @@ def free_prop_averaged(grid, pot,x0,compute=True,read=True,wdir="true_sim/averag
 		
 		plt.show()
 
-		f= open(wdir+"simu.txt","w+")
-		f.write("t gauche droite \n =============== \n")
-		for i in range(0,n):
-			f.write("{0:4.0f}\t {1:+7.5f}\t {2:+7.5f}\n".format(time[i],xLav[i]/A,xRav[i]/A))
+		#~ f= open(wdir+"simu.txt","w+")
+		#~ f.write("t gauche droite \n =============== \n")
+		#~ for i in range(0,n):
+			#~ f.write("{0:4.0f}\t {1:+7.5f}\t {2:+7.5f}\n".format(time[i],xLav[i]/A,xRav[i]/A))
 			
-		f.close()
+		#~ f.close()

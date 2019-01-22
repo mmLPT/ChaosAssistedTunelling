@@ -60,11 +60,11 @@ class QuantumTimePropagator(QuantumOperator):
 	# |psi(t')>=U(t',t)|psi(t)> with U(t',t)=U(dt,0)^idtmax
 	# It relies on splliting method with H = p**2/2m + V(x,wfx,t)
 	# It can be use for :
-	# - periodic V(x,t) -> dt=T0/idtmax
-	# - time-indepent V(x) -> T0=1, idtmax="n" 
-	# - periodic kicked system : T0 = 1, idtmax=1
-	
-	# /!\ Not adapted to non linear terms such a Gross-Pitaevskii
+	# - periodic V(x,t) 
+	# - time-indepent V(x)
+	# - periodic kicked system V(x,t)
+	# - non linear GP V(x,wfx,t)
+
 	def __init__(self,grid,potential,beta=0.0):
 		QuantumOperator.__init__(self,grid)
 		self.hermitian=False
@@ -108,7 +108,7 @@ class QuantumTimePropagator(QuantumOperator):
 		for idt in range(0,self.idtmax):
 			wf.p=wf.p*self.Up 
 			wf.p2x() 
-			wf.x=wf.x*np.exp(-(1j/self.grid.h)*(self.potential.Vx(self.grid.x,idt*self.dt,np.conj(wf.x)*wf.x))*self.dt)
+			wf.x=wf.x*np.exp(-(1j/self.grid.h)*(self.potential.Vx(self.grid.x,np.conj(wf.x)*wf.x,idt*self.dt))*self.dt)
 			wf.x2p() 
 			wf.p=wf.p*self.Up  
 			
@@ -234,13 +234,15 @@ class CATFloquetOperator(QuantumTimePropagator):
 			return diff
 		
 class QuantumImaginaryTimePropagator(QuantumOperator):
-	# WORK IN PROJECT
-	def __init__(self,grid,potential):
+	# This class is used to find the ground state of a given potential
+	# Note that is mean to be used for GP + no time dependent potential
+	
+	def __init__(self,grid,potential,idtmax):
 		self.potential=potential
 		self.grid=grid
 		
-		self.T0=potential.T0 # Length of propagation
-		self.idtmax=potential.idtmax 
+		self.T0=potential.T0 
+		self.idtmax=idtmax 
 		self.dt=self.T0/self.idtmax
 		
 		self.Up=np.zeros(grid.N,dtype=np.complex_)
@@ -249,30 +251,39 @@ class QuantumImaginaryTimePropagator(QuantumOperator):
 		self.muerrorref=1.0e-12
 		
 	def Ux(self, wfx):
+		# Split step x propagator
 		return np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x,wfx))/2.0)
 		
 	def getGroundState(self,wf):
-		mudiff=1.0
+		# Initialization
 		wf0x=wf.x
 		mu=1.0
-
 		i=0
+	
+		# Propagation
 		while mu > self.muerrorref:
 			
+			# Split step method
 			wf.x=wf.x*self.Ux(wf.x)
 			wf.x2p()
 			wf.p=wf.p*self.Up 
 			wf.p2x() 
 			wf.x=wf.x*self.Ux(wf.x) 
 			
+			# Notmalization
 			wf.normalizeX()
 			
+			# Compute mu=(1-||<wf(t)|wf(t+dt)>||^2)/dt to compare with monitoring value
 			mu=(1.0-abs(sum(np.conj(wf.x)*wf0x)*self.grid.intweight)**2)/self.dt
-
+			
+			# Iteration
+			wf0x=wf.x
+			i+=1
+			
+			# Output
 			if i%100==0:
 				print("norm =",abs(wf%wf),"mudiff=",mu/self.muerrorref)
 				
-			i+=1
-			wf0x=wf.x
+		# Converged
 		print("Converged in ",i,"iterations with dt=",self.dt)
 		return wf	
