@@ -7,7 +7,6 @@ from utils.quantum import *
 from utils.classical import *
 from utils.systems.modulatedpendulum import *
 from utils.systems.general import *
-#from utils.mathtools.periodicfunctions import *
 import utils.plot.read as read
 
 def convert(s,nu):
@@ -34,7 +33,7 @@ def propagate( grid, pot, iperiod, icheck,wdir,husimibool=False,wfbool=False,pro
 	# I periodically saves Husimi representation and wf in a .npz file
 	
 	husimi=Husimi(grid)
-	fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=1000)
+	fo=CATFloquetOperator(grid,pot)
 
 	projs=np.zeros(int(iperiod/icheck))
 	time=np.zeros(int(iperiod/icheck))
@@ -84,7 +83,7 @@ def period_with_h(e=0.32, gamma=0.29, imax=520, N=128, datafile="split"):
 		wfcs=WaveFunction(grid)
 		wfcs.setState("coherent",x0=pot.x0,xratio=2.0)
 		
-		fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=500)
+		fo=CATFloquetOperator(grid,pot)
 		fo.diagonalize()
 		fo.findTunellingStates(wfcs)
 		T[i]=fo.getTunnelingPeriod()
@@ -105,3 +104,39 @@ def explore_epsilon_gamma(wdir="e_gamma/"):
 		for j in range(0,nepsilon):
 			print("(",i,",",j,")")
 			period_with_h(e=epsilon[j],gamma=gamma[i],N=N,datafile=wdir+"g"+str(i)+"e"+str(j),imax=260)
+			
+def true_full_sim():	
+	gamma, h = modesbasic.convert(s=27.53, nu=70.8*10**3)
+	e=0.44
+	
+	nuX=25.0
+	nuL=8113.9
+	#g=0.04
+	g=0.00
+	omegax=(h*nuX)/(2*nuL)
+	
+	N=256*8
+	ncell=50
+	iperiod=300
+	icheck=1
+	xmax=ncell*2*np.pi
+
+	grid=Grid(N,h,xmax=xmax)
+	pot=PotentialMPasym(e,gamma,0,omegax)
+	
+	wf=WaveFunction(grid)
+	#wf.setState("load",datafile="true_sim/GS")
+	wf.setState("coherent",xratio=1.0,x0=0.5*np.pi)
+	#wf.shiftX(0.5*np.pi)
+	
+	fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=1000,g=g)
+	#fo.propagateQuarterGP(wf,i0=0)
+	
+	
+	for i in range(0,iperiod):
+		if i%icheck==0:
+			print(i)
+			wf.save("true_sim/wf/"+strint(i/icheck))
+			wf.savePNGx("true_sim/wfx-peak/"+strint(i/icheck),maxx0=1.0)
+			#wf.savePNGp("true_sim/wfp/"+strint(i/icheck))
+		fo.propagate(wf)

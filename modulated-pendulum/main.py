@@ -35,14 +35,15 @@ read=True
 
 #~ modesquasimomentum.imaginary()
 gamma, h = modesbasic.convert(s=27.53, nu=70.8*10**3)
+gamma, h = modesbasic.convert(s=28.25, nu=70.8*10**3)
 e=0.44
-#~ pot=PotentialMP(e,gamma)
-#~ grid=Grid(N,h)
-#~ x0=0.5*np.pi
-#~ modesquasimomentum.free_prop_averaged(grid,pot,x0)
+pot=PotentialMP(e,gamma)
+grid=Grid(N,h)
+x0=0.5*np.pi
+modesquasimomentum.free_prop_averaged(grid,pot,x0)
 #modesquasimomentum.imaginary(gamma,e,h)
 
-modesquasimomentum.true_full_sim()
+#modesquasimomentum.true_full_sim()
 
 
 

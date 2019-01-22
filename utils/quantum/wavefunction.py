@@ -118,7 +118,7 @@ class WaveFunction:
 		return wf
 		
 	def __sub__(self,other): 
-		# wf1+wf2 <-> |wf1>+|wf2>
+		# wf1-wf2 <-> |wf1>-|wf2>
 		psix=self.x-other.x
 		wf=WaveFunction(self.grid)
 		wf.x=psix
@@ -170,6 +170,20 @@ class WaveFunction:
 	def getx(self): 
 		# Get <psi|x|psi>
 		return sum(self.grid.x*abs(self.x)**2*self.grid.intweight)
+		
+	def getxR(self):
+		xR=0.0
+		for i in range(0,self.grid.N):
+			if self.grid.x[i]>0.0:
+				xR=xR+abs(self.x[i])**2
+		return xR
+		
+	def getxL(self):
+		xL=0.0
+		for i in range(0,self.grid.N):
+			if self.grid.x[i]<0.0:
+				xL=xL+abs(self.x[i])**2
+		return xL
 		
 	def getp2(self): 
 		# Get <psi|p^2|psi>

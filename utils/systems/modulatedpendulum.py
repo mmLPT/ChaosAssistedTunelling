@@ -14,9 +14,13 @@ from utils.plot.latex import *
 class PotentialMP(Potential):
 	def __init__(self,e,gamma,f=np.cos):
 		Potential.__init__(self)
+		self.T0=4*np.pi
+		self.idtmax=1000
+		
 		self.e=e
 		self.gamma=gamma
 		self.f=f # modulation waveform
+		
 		self.a1=getFourierCoefficient("a",1,self.f)
 		self.b1=getFourierCoefficient("b",1,self.f)
 		if gamma==0:
@@ -63,10 +67,10 @@ class PotentialMP(Potential):
 		
 class PotentialMPasym(PotentialMP):
 	# Adding longitudinal confinment to modulated pendulum
-	def __init__(self,e,gamma,x1,omega):
+	def __init__(self,e,gamma,x1,h):
 		PotentialMP.__init__(self,e,gamma)
 		self.x1=x1
-		self.omega2= omega**2 #(grid.h*25.0)/(2*8113.9)
+		self.omega2= ((h*25.0)/(2*8113.9))**2
 		
 	def Vx(self,x,t=np.pi/2.0):
 		return PotentialMP.Vx(self,x,t)+self.Vxasym(x)
@@ -82,27 +86,17 @@ class PotentialMPasym(PotentialMP):
 		# Returns <wf1|Vxasym|wf2>
 		return sum(np.conj(wf1.x)*self.Vxasym(wf1.grid.x)*wf2.x)
 		
+class PotentialMPasymGP(PotentialMP):
+	# Adding longitudinal confinment to modulated pendulum
+	def __init__(self,e,gamma,x1,h,g):
+		PotentialMP.__init__(self,e,gamma)
+		self.x1=x1
+		self.omega2=((h*25.0)/(2*8113.9))**2
+		self.isGP=True
+		self.g=0.0
 		
-#~ class PotentialMPasym(PotentialHO):
-	#~ # Adding longitudinal confinment to modulated pendulum
-	#~ def __init__(self,e,gamma,x1,omega):
-		#~ PotentialMP.__init__(self,e,gamma)
-		#~ self.x1=x1
-		#~ self.omega2= omega**2 #(grid.h*25.0)/(2*8113.9)
-		
-	#~ def Vx(self,x,t=np.pi/2.0):
-		#~ return PotentialMP.Vx(self,x,t)+self.Vxasym(x)
-	
-	#~ def dVdx(self,x,t=np.pi/2.0):
-		#~ return PotentialMP.Vx(self,x,t)+self.omega2*(x-self.x1)
-		
-	#~ def Vxasym(self,x):
-		#~ # Returns the non-symetric contribution of potential
-		#~ return 0.5*self.omega2*(x-self.x1)**2
-		
-	#~ def braketVxasym(self,wf1,wf2):
-		#~ # Returns <wf1|Vxasym|wf2>
-		#~ return sum(np.conj(wf1.x)*self.Vxasym(wf1.grid.x)*wf2.x)
+	def Vx(self,x,wfx,t=np.pi/2.0):
+		return PotentialMP.Vx(self,x,t)+PotentialMP.VGP(wfx)+0.5*self.omega2*(x-self.x1)**2
 
 class H0(QuantumOperator):
 	# Hamiltonian for unmodulated pendulum. The matric p representation
@@ -131,72 +125,11 @@ class H0(QuantumOperator):
 		wf=WaveFunction(self.grid)
 		wf.setState("loadp",psip=self.eigenvec[0].p*np.exp(-(1j/self.grid.h)*x0*self.grid.p))
 		return wf
-		
-class QuantumImaginaryTimePropagator(QuantumOperator):
-	# WORK IN PROJECT
-	def __init__(self,grid,potential,hermitian=False,idtmax=1,T0=1,g=0.0):
-		self.potential=potential
-		self.grid=grid
-		self.dt=T0/idtmax
-		
-		self.g=g
-		self.Up=np.zeros(grid.N,dtype=np.complex_)
-		self.Up=np.exp(-(self.dt/self.grid.h)*(grid.p**2/2))
-		
-		self.muerrorref=1.0e-12
-		
-	def Ux(self, wfx):
-		return np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x)+self.g*abs(wfx)**2)/2.0)
-		
-	def getGroundState(self,wf):
-		mudiff=1.0
-		wf0x=wf.x
-		mu=1.0
-
-		i=0
-		while mu > self.muerrorref:
-			
-			wf.x=wf.x*self.Ux(wf.x)
-			wf.x2p()
-			wf.p=wf.p*self.Up 
-			wf.p2x() 
-			wf.x=wf.x*self.Ux(wf.x) 
-			
-			wf.normalizeX()
-			
-			mu=(1.0-abs(sum(np.conj(wf.x)*wf0x)*self.grid.intweight)**2)/self.dt
-
-			if i%100==0:
-				print("norm =",abs(wf%wf),"mudiff=",mu/self.muerrorref)
-				
-			i+=1
-			wf0x=wf.x
-		print("Converged in ",i,"iterations with dt=",self.dt)
-		return wf	
 				
 class StrobosopicPhaseSpaceMP(StrobosopicPhaseSpace):
 	def __init__(self,nperiod,ny0,timepropagator,pot,xmax=2*np.pi,pmax=2*np.pi):
 		StrobosopicPhaseSpace.__init__(self,nperiod,ny0,timepropagator,xmax,pmax)
 		self.pot=pot
-		
-		
-	#~ def sety0(self,i):
-		#~ dx=0.3
-		#~ dp=0.1
-		#~ self.y0=np.array([self.pot.R1()+rd.randint(0,101)/100.0*dx-0.5*dx,rd.randint(0,101)/100.0*dp-0.5*dp])
-		
-	#~ def sety0(self,i):
-		#~ imax=self.ny0
-		#~ print(i)
-		#~ dx=2*np.pi
-		#~ dp=3.0
-		#~ if i<imax/4:
-			#~ self.y0=np.array([-0.5*dx+i*2*dx/imax,0])
-		#~ else:
-			#~ i=i-imax/4
-			#~ k=rd.randint(0,2)-1
-			#~ print(k)
-			#~ self.y0=np.array([k*2.5,-0.5*dp+i*2*dp/imax])
 			
 	def sety0(self,i,j):
 		dx=2*np.pi

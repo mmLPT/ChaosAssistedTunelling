@@ -58,23 +58,22 @@ class QuantumOperator:
 class QuantumTimePropagator(QuantumOperator):
 	# Class to be used to described time evolution operators such has
 	# |psi(t')>=U(t',t)|psi(t)> with U(t',t)=U(dt,0)^idtmax
-	# It relies on splliting method with H = p**2/2m + V(x,t)
+	# It relies on splliting method with H = p**2/2m + V(x,wfx,t)
 	# It can be use for :
 	# - periodic V(x,t) -> dt=T0/idtmax
 	# - time-indepent V(x) -> T0=1, idtmax="n" 
 	# - periodic kicked system : T0 = 1, idtmax=1
 	
 	# /!\ Not adapted to non linear terms such a Gross-Pitaevskii
-	def __init__(self,grid,potential,idtmax=1,T0=1,beta=0.0,g=0.0):
+	def __init__(self,grid,potential,beta=0.0):
 		QuantumOperator.__init__(self,grid)
 		self.hermitian=False
 		
 		self.potential=potential
-		self.T0=T0 # Length of propagation
-		self.idtmax=idtmax 
+		self.T0=potential.T0 # Length of propagation
+		self.idtmax=potential.idtmax 
 		self.dt=self.T0/self.idtmax
 		self.beta=beta # quasi-momentum
-		self.g=g #interactions
 		
 		
 		# In order to gain time in propagation, we pre-compute 
@@ -82,14 +81,20 @@ class QuantumTimePropagator(QuantumOperator):
 		# NB: if you have non interactions terms, this doesn't work
 		self.Up=np.zeros(self.N,dtype=np.complex_)
 		self.Up=np.exp(-(1j/grid.h)*((grid.p-self.beta)**2/4)*self.dt)
-		self.Ux=np.zeros((idtmax,self.N),dtype=np.complex_)
-		if self.potential.isTimeDependent:
-			for idt in range(0,idtmax):
-				self.Ux[idt]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x,idt*self.dt))*self.dt)
+		
+		if self.potential.isGP==True:
+			self.propagate=self.propagateGP
 		else:
-			self.Ux[0]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x))*self.dt)
+			self.Ux=np.zeros((self.idtmax,self.N),dtype=np.complex_)
+			if self.potential.isTimeDependent==True:
+				for idt in range(0,self.idtmax): 
+					self.Ux[idt]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x,idt*self.dt))*self.dt)
+			else:
+				self.Ux[0]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x))*self.dt)
+				
+			self.propagate=self.propagatenoGP	
 			
-	def propagate(self,wf):
+	def propagatenoGP(self,wf):
 		# Propagate over one period/kick/arbitray time 
 		for idt in range(0,self.idtmax):
 			wf.p=wf.p*self.Up 
@@ -98,16 +103,12 @@ class QuantumTimePropagator(QuantumOperator):
 			wf.x2p() 
 			wf.p=wf.p*self.Up  
 			
-	def UxGP(self,idt,wfx):
-		# Ux with interactions
-		return np.exp(-(1j/self.grid.h)*(self.potential.Vx(self.grid.x,idt*self.dt)+self.g*abs(np.conj(wfx)*wfx))*self.dt)
-			
 	def propagateGP(self,wf):
 		# Propagate over one period/kick/arbitray time with interactions
 		for idt in range(0,self.idtmax):
 			wf.p=wf.p*self.Up 
 			wf.p2x() 
-			wf.x=wf.x*self.UxGP(idt,wf.x)
+			wf.x=wf.x*np.exp(-(1j/self.grid.h)*(self.potential.Vx(self.grid.x,idt*self.dt,np.conj(wf.x)*wf.x))*self.dt)
 			wf.x2p() 
 			wf.p=wf.p*self.Up  
 			
@@ -125,35 +126,13 @@ class QuantumTimePropagator(QuantumOperator):
 class CATFloquetOperator(QuantumTimePropagator):
 	# This class is specific for CAT purpose:
 	# WIP: a bit dirty.
-	def __init__(self,grid,potential,idtmax=1,T0=1,beta=0.0,g=0.0):
-		QuantumTimePropagator.__init__(self,grid,potential,idtmax=idtmax,T0=T0,beta=beta,g=0.0)
+	def __init__(self,grid,potential,beta=0.0):
+		QuantumTimePropagator.__init__(self,grid,potential,beta=beta)
 		self.proj=np.zeros(grid.N)
 		self.qE=np.zeros(grid.N) # quasi energies
 		self.index=np.array([],dtype=int)
 		self.iqgs=0 #quasi ground state
 		self.iqfes=0 # quasi first excited state
-		
-	def propagateQuarter(self,wf,i0=0):
-		# Propagate over one period/kick/arbitray time 
-		# i0=0,1,2,3
-		it0=i0*int(self.idtmax/4)
-		for idt in range(0,int(self.idtmax/4)):
-			wf.p=wf.p*self.Up 
-			wf.p2x() 
-			wf.x=wf.x*self.Ux[it0+idt]
-			wf.x2p() 
-			wf.p=wf.p*self.Up 
-			
-	def propagateQuarterGP(self,wf,i0=0):
-		# Propagate over one period/kick/arbitray time 
-		# i0=0,1,2,3
-		it0=i0*int(self.idtmax/4)
-		for idt in range(0,int(self.idtmax/4)):
-			wf.p=wf.p*self.Up 
-			wf.p2x() 
-			wf.x=wf.x*self.UxGP(it0+idt,wf.x)
-			wf.x2p() 
-			wf.p=wf.p*self.Up  
 	
 	def findTunellingStates(self,wf):
 		# Find the two states that tunnels given a wavefunction
@@ -254,3 +233,46 @@ class CATFloquetOperator(QuantumTimePropagator):
 		else:
 			return diff
 		
+class QuantumImaginaryTimePropagator(QuantumOperator):
+	# WORK IN PROJECT
+	def __init__(self,grid,potential):
+		self.potential=potential
+		self.grid=grid
+		
+		self.T0=potential.T0 # Length of propagation
+		self.idtmax=potential.idtmax 
+		self.dt=self.T0/self.idtmax
+		
+		self.Up=np.zeros(grid.N,dtype=np.complex_)
+		self.Up=np.exp(-(self.dt/self.grid.h)*(grid.p**2/2))
+		
+		self.muerrorref=1.0e-12
+		
+	def Ux(self, wfx):
+		return np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x,wfx))/2.0)
+		
+	def getGroundState(self,wf):
+		mudiff=1.0
+		wf0x=wf.x
+		mu=1.0
+
+		i=0
+		while mu > self.muerrorref:
+			
+			wf.x=wf.x*self.Ux(wf.x)
+			wf.x2p()
+			wf.p=wf.p*self.Up 
+			wf.p2x() 
+			wf.x=wf.x*self.Ux(wf.x) 
+			
+			wf.normalizeX()
+			
+			mu=(1.0-abs(sum(np.conj(wf.x)*wf0x)*self.grid.intweight)**2)/self.dt
+
+			if i%100==0:
+				print("norm =",abs(wf%wf),"mudiff=",mu/self.muerrorref)
+				
+			i+=1
+			wf0x=wf.x
+		print("Converged in ",i,"iterations with dt=",self.dt)
+		return wf	

@@ -49,15 +49,15 @@ def perturbation_theory(grid,e,gamma,datafile="data/perturbation", compute=False
 		
 		# Findind initial tunneling states that will be used to compute
 		# perturbation theory expectation later
-		fo0=CATFloquetOperator(grid,pot0,T0=4*np.pi,idtmax=500)
+		fo0=CATFloquetOperator(grid,pot0)
 		fo0.diagonalize()
 		fo0.findTunellingStates(wfcsp)
 
 		for i in range(0,npoints):
 			
 			# Creation of an operator, based on an asymetric potential
-			pot=PotentialMPasym(e,gamma,x1[i],(grid.h*25.0)/(2*8113.9))
-			fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=500)
+			pot=PotentialMPasym(e,gamma,x1[i],grid.h)
+			fo=CATFloquetOperator(grid,pot)
 			
 			# Determine the tunneling states
 			fo.diagonalize()
@@ -115,20 +115,20 @@ def check_T_with_confinment(imax=11, e=0.32, gamma=0.29,N=64, xasym=15*2*np.pi, 
 			# Initialization
 			grid=Grid(N,h[i],2*np.pi)
 			
-			pot_x0=PotentialMPasym(e,gamma,0,(grid.h*25.0)/(2*8113.9))
-			pot_xasym=PotentialMPasym(e,gamma,xasym,(grid.h*25.0)/(2*8113.9))
+			pot_x0=PotentialMPasym(e,gamma,0,grid.h)
+			pot_xasym=PotentialMPasym(e,gamma,xasym,grid.h)
 			
 			wfcs=WaveFunction(grid)
 			wfcs.setState("coherent",x0=pot_xasym.x0,xratio=2.0)
 			
 			# Harmonic potential at x=0
-			fo_x0=CATFloquetOperator(grid,pot_x0,T0=4*np.pi,idtmax=500)
+			fo_x0=CATFloquetOperator(grid,pot_x0)
 			fo_x0.diagonalize()
 			fo_x0.findTunellingStates(wfcs)
 			T_x0[i]=fo_x0.getTunnelingPeriod()
 
 			# Harmonic potential at x=xshift
-			fo_xasym=CATFloquetOperator(grid,pot_xasym,T0=4*np.pi,idtmax=500)
+			fo_xasym=CATFloquetOperator(grid,pot_xasym)
 			fo_xasym.diagonalize()
 			fo_xasym.findTunellingStates(wfcs)
 			T_xasym[i]=fo_xasym.getTunnelingPeriod()
@@ -172,12 +172,12 @@ def symetry_of_gs_with_h(N, e, gamma, datafile="split", compute=False,read=True)
 			print(str(i+1)+"/"+str(imax)+" - h={0:.25f}".format(h[i]))
 			grid=Grid(N,h[i],2*np.pi)
 			pot=PotentialMP(e,gamma)
-			potasym=PotentialMPasym(e,gamma,15*2*np.pi,(grid.h*25.0)/(2*8113.9))
+			potasym=PotentialMPasym(e,gamma,15*2*np.pi,grid.h)
 				
 			wfcs=WaveFunction(grid)
 			wfcs.setState("coherent",x0=pot.x0,xratio=2.0)
 			
-			fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=2500)
+			fo=CATFloquetOperator(grid,pot)
 			fo.diagonalize()
 			fo.findTunellingStates(wfcs)
 			T[i]=fo.getTunnelingPeriod()
@@ -241,7 +241,7 @@ def track_crossing(N, e, gamma, hmin,hmax, datafile="data/track_crossing",comput
 		grid=Grid(N,hmin)
 		wfcs=WaveFunction(grid)
 		wfcs.setState("coherent",x0=pot.x0,xratio=2.0)
-		fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=idtmax)
+		fo=CATFloquetOperator(grid,pot)
 		fo.diagonalize()
 		fo.findTunellingStates(wfcs)
 		h=np.append(h,hmin)
@@ -253,7 +253,7 @@ def track_crossing(N, e, gamma, hmin,hmax, datafile="data/track_crossing",comput
 		grid=Grid(N,hmax)
 		wfcs=WaveFunction(grid)
 		wfcs.setState("coherent",x0=pot.x0,xratio=2.0)
-		fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=idtmax)
+		fo=CATFloquetOperator(grid,pot)
 		fo.diagonalize()
 		fo.findTunellingStates(wfcs)
 		h=np.append(h,hmax)
@@ -273,7 +273,7 @@ def track_crossing(N, e, gamma, hmin,hmax, datafile="data/track_crossing",comput
 			grid=Grid(N,hm)
 			wfcs=WaveFunction(grid)
 			wfcs.setState("coherent",x0=pot.x0,xratio=2.0)
-			fo=CATFloquetOperator(grid,pot,T0=4*np.pi,idtmax=idtmax)
+			fo=CATFloquetOperator(grid,pot)
 			fo.diagonalize()
 			fo.findTunellingStates(wfcs)
 			

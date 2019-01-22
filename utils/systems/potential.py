@@ -4,11 +4,19 @@ import matplotlib.pyplot as plt
 class Potential:
 	# The class potential is desgined to be herited only
 	def __init__(self):
-		pass
+		self.isGP=False
+		self.isTimeDependent=False
+		self.g=0.0
+		self.T0=0.0
+		self.idtmax=0
+
 	def Vx(self,x):
 		pass
-	def mdVdx(self,x):
+	def dVdx(self,x):
 		pass
+		
+	def VGP(self,wfx):
+		return self.g*abs(wfx)**2
 		
 	@property
 	def isTimeDependent(self):
@@ -19,21 +27,35 @@ class Potential:
 		self._isTimeDependent = value
 		
 	@property
+	def isGP(self):
+		return self._isGP
+		
+	@isGP.setter
+	def isGP(self, value):
+		self._isGP = value
+		
+	@property
+	def T0(self):
+		return self._T0
+		
+	@T0.setter
+	def T0(self, value):
+		self._T0 = value
+		
+	@property
+	def idtmax(self):
+		return self._idtmax
+		
+	@idtmax.setter
+	def idtmax(self, value):
+		self._idtmax = value
+		
+	@property
 	def x0(self):
 		return self._x0
 		
 	@x0.setter
 	def x0(self, value):
 		self._x0 = value
-		
-		
-	def plot(self,xt,yt,dfile="potential",n=1000):
-		x=np.linspace(xt[0],xt[1],n)
-		plt.plot(x,self.Vx(x))
-		ax = plt.axes()
-		ax.set_xlim(xt[0],xt[1])
-		ax.set_ylim(yt[0],yt[1])
-		plt.savefig(dfile+".png", bbox_inches='tight')
-		plt.clf() 
 		
 
