@@ -89,7 +89,7 @@ class PotentialMPasym(PotentialMP):
 		
 class PotentialMPasymGP(PotentialMP):
 	# Longitudinal confinment + GP
-	def __init__(self,e,gamma,x1,h):
+	def __init__(self,e,gamma,h):
 		PotentialMP.__init__(self,e,gamma)
 		self.omega2=(modesbasic.getomegax(h))**2
 		self.isGP=True

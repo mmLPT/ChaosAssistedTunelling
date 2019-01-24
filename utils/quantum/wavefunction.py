@@ -87,10 +87,12 @@ class WaveFunction:
 			
 	def normalizeX(self):
 		# Normalize <x|psi>
+		# /!\ don't forget the discretization
 		nrm=abs(sum(np.conj(self.x)*self.x))*self.grid.intweight
 		self.x = self.x/np.sqrt(nrm)
 		
 	def shiftX(self,x0):
+		# Shift the wavefunction in x direction
 		self.x=np.roll(self.x, self.grid.getNforXshift(x0))
 		self.x2p()
 		
@@ -157,12 +159,10 @@ class WaveFunction:
 		
 	# === I/O ==========================================================
 	def isSymetricInX(self,sigma=0.01):
-		mwf=WaveFunction(self.grid)
-		psix=np.zeros(self.grid.N,dtype=np.complex_)
-		for i in range(0,self.grid.N):
-			psix[i]=self.x[self.grid.N-1-i]
-		mwf.x=psix
-		if sum(abs((mwf-self).x)**2) < sigma:
+		
+		psix=np.flipud(self.x)-self.x
+
+		if  sum(np.conj(psix)*psix)*self.grid.intweight < sigma:
 			return True
 		else:
 			return False

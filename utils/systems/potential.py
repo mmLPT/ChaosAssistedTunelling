@@ -6,7 +6,11 @@ class Potential:
 	def __init__(self):
 		self.isGP=False
 		self.isTimeDependent=False
-		self.g=0.0
+		self.g=0.0 # Gross-Pitaieskii strengh
+		
+		# Following may be note carefully
+		# - for kicked system: T0=1.0, idtmax=1/dt
+		# - for periodic system: T0 = period, idtmax=
 		self.T0=0.0
 		self.idtmax=0
 

@@ -11,13 +11,13 @@ from utils.systems.general import *
 import utils.plot.read as readw
 import modesbasic
 
-def free_prop_averaged(grid, pot,x0,compute=False,read=True,wdir="true_sim/averaged-test/"):
+def free_prop_averaged(grid, pot,x0,ibetamax=1,compute=True,read=True,wdir="true_sim/averaged-test/"):
 	if(compute):
-		iperiod=40
+		iperiod=100
 		icheck=1
 		n=int(iperiod/icheck)
 		
-		ibetamax=250
+		ibetamax=ibetamax
 
 		xR=np.zeros(n)
 		xL=np.zeros(n)
@@ -26,7 +26,11 @@ def free_prop_averaged(grid, pot,x0,compute=False,read=True,wdir="true_sim/avera
 		for j in range(0,ibetamax):
 			print(j)
 			
+			
 			beta=np.random.normal(0.0, grid.h/6.0)
+			if ibetamax==1:
+				beta=0.0
+				
 			fo=CATFloquetOperator(grid,pot,beta=beta)
 			
 			wf=WaveFunction(grid)
@@ -34,7 +38,7 @@ def free_prop_averaged(grid, pot,x0,compute=False,read=True,wdir="true_sim/avera
 			
 			for i in range(0,iperiod):
 				if i%icheck==0:
-					
+					print(i)
 					xL[int(i/icheck)]=wf.getxL()
 					xR[int(i/icheck)]=wf.getxR()
 					time[int(i/icheck)]=i*2
@@ -67,11 +71,11 @@ def free_prop_averaged(grid, pot,x0,compute=False,read=True,wdir="true_sim/avera
 		plt.plot(time,xLav/A, c="red")
 		plt.plot(time,xRav/A, c="blue")
 		
-		x1,y1=np.loadtxt("exp-data/pop_non_tunnel.txt",usecols=(0, 1), unpack=True)
-		x2,y2=np.loadtxt("exp-data/pop_tunnel.txt",usecols=(0, 1), unpack=True)
+		#~ x1,y1=np.loadtxt("exp-data/pop_non_tunnel.txt",usecols=(0, 1), unpack=True)
+		#~ x2,y2=np.loadtxt("exp-data/pop_tunnel.txt",usecols=(0, 1), unpack=True)
 		
-		plt.scatter(x1,y1)
-		plt.scatter(x2,y2)
+		#~ plt.scatter(x1,y1)
+		#~ plt.scatter(x2,y2)
 		
 		
 		ax=plt.gca()
@@ -79,7 +83,7 @@ def free_prop_averaged(grid, pot,x0,compute=False,read=True,wdir="true_sim/avera
 		ax.set_ylabel(r"$x gauche et x droite$")
 		ax.set_title(r"$s=27.53 \ \nu=70.8 \ kHz \ \varepsilon=0.44 \ x_0=0.5 \pi$")
 		ax.set_ylim(0,1.0)
-		ax.set_xlim(0,70)
+		ax.set_xlim(0,max(time))
 		
 		plt.show()
 

@@ -38,6 +38,7 @@ class QuantumOperator:
 			for i in range(0,self.N):
 				wf=WaveFunction(self.grid)
 				wf.x=eigenvec[:,i]
+				wf.normalizeX()
 				wf.x2p()
 				self.eigenvec.insert(i,wf)
 		elif self.Mrepresentation=="p":
@@ -45,6 +46,8 @@ class QuantumOperator:
 				wf=WaveFunction(self.grid)
 				wf.p=np.fft.ifftshift(eigenvec[:,i])*self.grid.phaseshift
 				wf.p2x()
+				wf.normalizeX()
+				wf.x2p()
 				self.eigenvec.insert(i,wf)
 	
 	def saveEvec(self,husimi,wdir,index=0):
@@ -128,70 +131,80 @@ class CATFloquetOperator(QuantumTimePropagator):
 	# WIP: a bit dirty.
 	def __init__(self,grid,potential,beta=0.0):
 		QuantumTimePropagator.__init__(self,grid,potential,beta=beta)
-		self.proj=np.zeros(grid.N)
+		self.overlaps=np.zeros(grid.N)
 		self.qE=np.zeros(grid.N) # quasi energies
-		self.index=np.array([],dtype=int)
-		self.iqgs=0 #quasi ground state
-		self.iqfes=0 # quasi first excited state
+		self.i1=0 #quasi ground state
+		self.i2=0 # quasi first excited state
 	
-	def findTunellingStates(self,wf):
+	def computeOverlapsAndQEs(self,wf):
 		# Find the two states that tunnels given a wavefunction
 		
 		# Check the overlap with the given wave function
 		for i in range(0,self.N):
-			self.proj[i]=self.eigenvec[i]//wf
+			self.overlaps[i]=self.eigenvec[i]//wf
 			self.qE[i]=-np.angle(self.eigenval[i])*(self.h/self.T0)
-			if self.proj[i]>0.01:
-				self.index=np.append(self.index,[i])
 			
-		# Find the two states that tunnels
-		max1=np.argmax(self.proj)
-		proj1=self.proj[max1]
-		self.proj[max1]=0.0
-		max2=np.argmax(self.proj)
-		self.proj[max1]=proj1
+			
+		#~ # Find the two states that tunnels
+		#~ max1=np.argmax(self.proj)
+		#~ proj1=self.proj[max1]
+		#~ self.proj[max1]=0.0
+		#~ max2=np.argmax(self.proj)
+		#~ self.proj[max1]=proj1
 		
-		# Eigenvectors are ordered by quasi-energies qE1<qE2
-		# This can be differents to projections ordering!
+		#~ # Eigenvectors are ordered by quasi-energies qE1<qE2
+		#~ # This can be differents to projections ordering!
 		
-		# Check basic ordering
-		if self.qE[max1]<self.qE[max2]:
-			self.iqgs=max1
-			self.iqfes=max2
-		else:
-			self.iqgs=max2
-			self.iqfes=max1
+		#~ # Check basic ordering
+		#~ if self.qE[max1]<self.qE[max2]:
+			#~ self.iqgs=max1
+			#~ self.iqfes=max2
+		#~ else:
+			#~ self.iqgs=max2
+			#~ self.iqfes=max1
 		
-		# Check if this is not a 
-		if self.diffqE1qE2(self.iqfes,self.iqgs)<0:
-			self.iqfes,self.iqgs=self.iqgs,self.iqfes
+		#~ # Check if this is not a 
+		#~ if self.diffqE1qE2(self.iqfes,self.iqgs)<0:
+			#~ self.iqfes,self.iqgs=self.iqgs,self.iqfes
 			
 	def getTunnelingPeriod(self):
-		# Get the tunneling period
-		return 2*np.pi*self.h/(self.T0*(self.diffqE1qE2(self.iqfes,self.iqgs)))
 		
-	def getQEs(self,n):
+		# Find the two states that tunnels
+		self.i1=np.argmax(self.overlaps)
+		proj1=self.overlaps[self.i1]
+		self.overlaps[self.i1]=0.0
+		self.i2=np.argmax(self.overlaps)
+		self.overlaps[self.i1]=proj1
+		
+		# Get the tunneling period
+		return 2*np.pi*self.h/(self.T0*(abs(self.diffqE1qE2(self.i1,self.i2))))
+		
+	def getQEsOverlapsIndex(self,n):
 		# Returns the n states with the largest projections on coherent states
 		qes=np.zeros(n)
-		ind=np.flipud(np.argsort(self.proj))
+		projections=np.zeros(n)
+		symX=np.zeros(n)
+		ind=np.flipud(np.argsort(self.overlaps))
 		for i in range(0,n):
 			qes[i]=self.qE[ind[i]]
-		return qes	
+			projections[i]=self.overlaps[ind[i]]
+			symX[i]=self.eigenvec[ind[i]].isSymetricInX()
+		return qes, projections, symX, ind	
 		
 	def getQE(self,i0):
 		# Returns either the quasi-energy of quasi-ground state or quasi-first excited state
 		if i0==0:
-			i=self.iqgs
+			i=self.i1
 		else:
-			i=self.iqfes
+			i=self.i2
 		return self.qE[i]
 		
 	def getEvec(self,i0):
 		# Same as getQE but returns the state instead of quasi energy
 		if i0==0:
-			i=self.iqgs
+			i=self.i1
 		else:
-			i=self.iqfes
+			i=self.i2
 		return self.eigenvec[i]
 			
 	def getQETh(self,i0,pot):
