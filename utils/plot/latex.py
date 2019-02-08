@@ -36,5 +36,5 @@ def saveLatex(datafile,notes=True):
 		#plt.savefig("/users/martinez/Desktop/These/notes/pictures/"+datafile+".pdf", format="pdf", bbox_inches='tight')
 		plt.savefig("/users/martinez/Desktop/These/notes/pictures/"+datafile+".png", bbox_inches='tight',dpi=1000)
 	else:
-		plt.savefig(datafile+".png", bbox_inches='tight',dpi=50)
+		plt.savefig(datafile+".png", bbox_inches='tight',dpi=1000)
 	plt.clf()

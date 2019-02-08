@@ -17,7 +17,7 @@ class StrobosopicPhaseSpace:
 		self.pmax=pmax
 		self.timepropagator=timepropagator
 	
-	def getTrajectory(self,i,j):
+	def getTrajectory(self,i,j=0):
 		# this fonciton computes strobsoocpic trajectory over nperiod 
 		# for a given initial state y0
 		self.sety0(i,j)
@@ -34,13 +34,18 @@ class StrobosopicPhaseSpace:
 		
 		return xs, ps
 	
-	def save(self,wdir=""):
-		for i in range(0,self.ny0):
-			for j in range(0,self.ny0):
-				xs,ps = self.getTrajectory(i,j)
-				np.savez(wdir+strint(i*self.ny0+j),"w", x=xs, p=ps)
+	def save(self,wdir="",double=False):
+		if double:
+			for i in range(0,self.ny0):
+				for j in range(0,self.ny0):
+					xs,ps = self.getTrajectory(i,j)
+					np.savez(wdir+strint(i*self.ny0+j),"w", x=xs, p=ps)
+		else:
+			for i in range(0,self.ny0):
+				xs,ps = self.getTrajectory(i)
+				np.savez(wdir+strint(i),"w", x=xs, p=ps)
 			
-	def npz2plt(self, wdir=""):
+	def npz2plt(self, wdir="",double=False):
 		setLatex()
 		# Read .npz file and print it
 		ax = plt.axes()
@@ -48,13 +53,21 @@ class StrobosopicPhaseSpace:
 		ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)
 		#ax.set_ylim(-1.0,1.0)
 		ax.set_aspect('equal')
-		for i in range(0,self.ny0):
-			for j in range(0,self.ny0):
-				data=np.load(wdir+strint(i*self.ny0+j)+".npz")
+		if double:
+			for i in range(0,self.ny0):
+				for j in range(0,self.ny0):
+					data=np.load(wdir+strint(i*self.ny0+j)+".npz")
+					x=data["x"]
+					p=data["p"]
+					plt.scatter(x,p,s=0.1**2,c="black")
+			plt.show()
+		else:
+			for i in range(0,self.ny0):
+				data=np.load(wdir+strint(i)+".npz")
 				x=data["x"]
 				p=data["p"]
 				plt.scatter(x,p,s=0.1**2,c="black")
-		plt.show()
+			plt.show()
 		#saveLatex("classicalPS")
 		
 	def sety0(self,i,j):

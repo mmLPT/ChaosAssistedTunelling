@@ -80,12 +80,13 @@ class Husimi:
 		x=data["x"]
 		p=data["p"]
 		R=rho.max()
+		rho=rho/R
 			
 		# Generla settings : tile/axes
 		plt.title(title)
 		ax = plt.axes()
 		#ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)
-		ax.set_ylim(-1.0,1.0)
+		ax.set_ylim(-np.pi,np.pi)
 		ax.set_xlim(-self.grid.xmax/2.0,self.grid.xmax/2.0)
 		ax.set_aspect('equal')
 		"""
@@ -97,8 +98,8 @@ class Husimi:
 		
 		
 		# 2D map options
-		levels = MaxNLocator(nbins=100).tick_values(0.0,R)	
-		cmap = plt.get_cmap('binary')
+		levels = MaxNLocator(nbins=150).tick_values(0.0,1.0)	
+		cmap = plt.get_cmap('plasma')
 		norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
 		plt.contourf(x,p,rho, levels=levels,cmap=cmap)
 		#plt.pcolormesh(x,p,rho, norm=norm,cmap=cmap)

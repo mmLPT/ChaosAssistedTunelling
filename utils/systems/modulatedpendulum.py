@@ -66,6 +66,10 @@ class PotentialMP(Potential):
 	def thetaR2(self):
 		return self.thetaR1()+np.pi/2.0
 		
+	def getParams(self):
+		return self.e, self.gamma, self.x0
+
+		
 class PotentialMPasym(PotentialMP):
 	# Adding longitudinal confinment to modulated pendulum
 	def __init__(self,e,gamma,x1,h):
@@ -98,27 +102,30 @@ class PotentialMPasymGP(PotentialMP):
 	def Vx(self,x,wfx,t=np.pi/2.0):
 		return PotentialMP.Vx(self,x,t)+PotentialMP.VGP(self,wfx)+0.5*self.omega2*x**2
 		
-class PotentialMPloading(PotentialMP):
+class PotentialMPloading(Potential):
 	# Longitudinal confinment + GP + modulation off + gamma(t)
 	# This micmics the loading of the optical lattice in experiments
-	def __init__(self,e,gamma,h):
-		PotentialMP.__init__(self,e,gammafinal=0.25)
+	def __init__(self,e,gammaf,h):
+		Potential.__init__(self)
 		self.omega2=(modesbasic.getomegax(h))**2
 		
 		self.T0=50000
-		self.idtmax=(self.T0*4*np.pi/1000)
+		self.idtmax=int(self.T0*10)
+		print(self.idtmax)
 		
 		self.isGP=True
 		self.g=modesbasic.getg(h)
+		
+		self.isTimeDependent=True
 
-		self.gammafinal=gammafinal
-		self.alphaloading=self.gammafinal/self.T0
+		self.gammaf=gammaf
+		self.alphaloading=self.gammaf/self.T0
 	
 	def gamma(self,t):
-		return self.alpha*t
+		return self.alphaloading*t
 		
 	def Vx(self,x,wfx,t):
-		return -self.gamma(t)*np.cos(x)+PotentialMP.VGP(wfx)+0.5*self.omega2*x**2
+		return -self.gamma(t)*np.cos(x)+PotentialMP.VGP(self,wfx)+0.5*self.omega2*x**2
 
 class H0(QuantumOperator):
 	# Hamiltonian for unmodulated pendulum. The matric p representation
@@ -153,16 +160,27 @@ class StrobosopicPhaseSpaceMP(StrobosopicPhaseSpace):
 		StrobosopicPhaseSpace.__init__(self,nperiod,ny0,timepropagator,xmax,pmax)
 		self.pot=pot
 			
+	#~ def sety0(self,i,j):
+		#~ dx=2*np.pi
+		#~ dp=3.0
+		#~ dp=2*np.pi
+		#~ x0=dx*(-0.5+float(i+0.5)/self.ny0)
+		#~ p0=dp*(-0.5+float(j+0.5)/self.ny0)
+		#~ self.y0=np.array([x0,p0])
+		#~ print(x0,p0)	
+		
 	def sety0(self,i,j):
 		dx=2*np.pi
-		dp=3.0
 		dp=2*np.pi
 		x0=dx*(-0.5+float(i+0.5)/self.ny0)
-		p0=dp*(-0.5+float(j+0.5)/self.ny0)
+		if j==0:
+			p0=0.0
+		else:
+			p0=dp*(-0.5+float(j+0.5)/self.ny0)
 		self.y0=np.array([x0,p0])
 		print(x0,p0)	
 		
-	def npz2plt(self, potential, datadir=""):
+	def npz2plt(self, potential, datadir="",double=False):
 		R1=potential.R1()
 		R2=potential.R2()
 		thetaR1=potential.thetaR1()
@@ -171,5 +189,5 @@ class StrobosopicPhaseSpaceMP(StrobosopicPhaseSpace):
 		#~ plt.scatter(R2*np.cos(thetaR2),0.5*R2*np.sin(thetaR2),s=3**2,marker="o",c="red")
 		#~ plt.scatter(R1*np.cos(thetaR1+np.pi),0.5*R1*np.sin(thetaR1+np.pi),s=3**2,marker="o",c="red")
 		#~ plt.scatter(R2*np.cos(thetaR2+np.pi),0.5*R2*np.sin(thetaR2+np.pi),s=3**2,marker="o",c="red")
-		StrobosopicPhaseSpace.npz2plt(self,datadir)
+		StrobosopicPhaseSpace.npz2plt(self,datadir,double=double)
 

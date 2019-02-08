@@ -11,9 +11,13 @@ from utils.systems.general import *
 import utils.plot.read as readw
 import modesbasic
 
-def free_prop_averaged(grid, pot,x0,ibetamax=1,compute=True,read=True,wdir="true_sim/averaged-test/"):
+def free_prop_averaged(grid, pot,x0,Ndbeta=2.0,ibetamax=1,iperiod=100,compute=True,read=True,wdir="averaged-beta/noname/"):
+	# Mode to study the free propagation with split step method
+	# We look at "left" and "right" observable over time which micmic 
+	# the exprimental setup.
+	# The observables are incoheretly 
 	if(compute):
-		iperiod=100
+		iperiod=iperiod
 		icheck=1
 		n=int(iperiod/icheck)
 		
@@ -24,10 +28,10 @@ def free_prop_averaged(grid, pot,x0,ibetamax=1,compute=True,read=True,wdir="true
 		time=np.zeros(n)
 		
 		for j in range(0,ibetamax):
-			print(j)
+			print(j,"/",ibetamax-1)
 			
 			
-			beta=np.random.normal(0.0, grid.h/6.0)
+			beta=np.random.normal(0.0, grid.h/(3.0*Ndbeta))
 			if ibetamax==1:
 				beta=0.0
 				
@@ -38,7 +42,6 @@ def free_prop_averaged(grid, pot,x0,ibetamax=1,compute=True,read=True,wdir="true
 			
 			for i in range(0,iperiod):
 				if i%icheck==0:
-					print(i)
 					xL[int(i/icheck)]=wf.getxL()
 					xR[int(i/icheck)]=wf.getxR()
 					time[int(i/icheck)]=i*2
@@ -46,13 +49,18 @@ def free_prop_averaged(grid, pot,x0,ibetamax=1,compute=True,read=True,wdir="true
 			
 			np.savez(wdir+"run-"+strint(j),"w", beta=beta, xL = xL, xR=xR)
 			
-		np.savez(wdir+"data","w", time=time,ibetamax=ibetamax,n=n)
+		np.savez(wdir+"data","w", time=time,ibetamax=ibetamax,n=n,h=grid.h,paramspot=pot.getParams(),x0=x0)
 		
 	if(read):
 		data=np.load(wdir+"data.npz")
 		time=data['time']
 		ibetamax=data['ibetamax']
 		n=data['n']
+		e=data['paramspot'][0]
+		gamma=data['paramspot'][1]
+		x0=data['x0']
+		h=data['h']
+		s,nu,x0exp=modesbasic.convert2exp(gamma,h,x0)
 
 		xRav=np.zeros(n)
 		xLav=np.zeros(n)
@@ -61,15 +69,19 @@ def free_prop_averaged(grid, pot,x0,ibetamax=1,compute=True,read=True,wdir="true
 			data=np.load(wdir+"run-"+strint(j)+".npz")
 			xR=data['xR']
 			xL=data['xL']
+			plt.plot(time/2.0,xL, c="red")
+			plt.plot(time/2.0,xR, c="blue")
 			for i in range(0,n):
 				xRav[i]=xRav[i]+xR[i]
 				xLav[i]=xLav[i]+xL[i]
 				
+		plt.show()
+				
 		A=xRav[0]
 		
 
-		plt.plot(time,xLav/A, c="red")
-		plt.plot(time,xRav/A, c="blue")
+		plt.plot(time/2.0,xLav/A, c="red")
+		plt.plot(time/2.0,xRav/A, c="blue")
 		
 		#~ x1,y1=np.loadtxt("exp-data/pop_non_tunnel.txt",usecols=(0, 1), unpack=True)
 		#~ x2,y2=np.loadtxt("exp-data/pop_tunnel.txt",usecols=(0, 1), unpack=True)
@@ -80,10 +92,10 @@ def free_prop_averaged(grid, pot,x0,ibetamax=1,compute=True,read=True,wdir="true
 		
 		ax=plt.gca()
 		ax.set_xlabel(r"Périodes")
-		ax.set_ylabel(r"$x gauche et x droite$")
-		ax.set_title(r"$s=27.53 \ \nu=70.8 \ kHz \ \varepsilon=0.44 \ x_0=0.5 \pi$")
+		ax.set_ylabel(r"$Observable de position normalisée$")
+		ax.set_title(r"$s={:.2f} \quad \nu={:.2f}\ kHz \quad \varepsilon={:.2f}  \quad x_0={:.0f}^\circ$".format(s,nu*10**(-3),e,x0exp))
 		ax.set_ylim(0,1.0)
-		ax.set_xlim(0,max(time))
+		ax.set_xlim(0,max(time/2.0))
 		
 		plt.show()
 
@@ -93,3 +105,42 @@ def free_prop_averaged(grid, pot,x0,ibetamax=1,compute=True,read=True,wdir="true
 			#~ f.write("{0:4.0f}\t {1:+7.5f}\t {2:+7.5f}\n".format(time[i],xLav[i]/A,xRav[i]/A))
 			
 		#~ f.close()
+		
+def distribution_omega(grid,pot,Ndbeta=2.0,compute=True,read=True,ibetamax=1500,wdir="CAT/",datafile="distribution",scan=False):
+	# Compute the distribution of omega tunnel for a give distribution of
+	# quasimomentum
+	
+	omega=np.zeros(ibetamax)
+	T=np.zeros(ibetamax)
+	beta=np.zeros(ibetamax)
+	
+	if(compute):
+		for i in range(0,ibetamax):
+			if(scan):
+				beta[i]=i*grid.h/ibetamax
+			else:
+				beta[i]=np.random.normal(0.0, grid.h/(3.0*Ndbeta))
+			
+			fo=CATFloquetOperator(grid,pot,beta=beta[i])
+			
+			wf=WaveFunction(grid)
+			wf.setState("coherent",x0=pot.x0,xratio=2.0)
+			
+			fo.diagonalize()
+			fo.computeOverlapsAndQEs(wf)
+			fo.getTunnelingPeriod()
+			
+			T[i]=fo.getTunnelingPeriod()
+			omega[i]=2*np.pi/T[i]
+			
+			print(i,omega[i],T[i])
+
+		np.savez(wdir+datafile,"w", omega=omega,T=T,beta=beta)
+			
+	if(read):
+		data=np.load(wdir+datafile+".npz")
+		omega=data['omega']
+		beta=data['beta']
+		#plt.hist(omega, 15, normed=True)
+		plt.scatter(beta,omega)
+		plt.show()

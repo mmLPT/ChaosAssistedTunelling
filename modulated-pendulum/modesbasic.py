@@ -7,7 +7,6 @@ from utils.quantum import *
 from utils.classical import *
 from utils.systems.modulatedpendulum import *
 from utils.systems.general import *
-import utils.plot.read as read
 
 def getg(h):
 			
@@ -22,7 +21,7 @@ def getg(h):
 
 	g=2*np.pi*h**2*a*Nat*nuperp/(2*nuL*d)
 	print("g=",g)
-	return 0.001
+	return 0.04
 
 def getomegax(h):
 	return (h*25.0)/(2*8113.9)
@@ -37,7 +36,7 @@ def convert2theory(s,nu):
 	heff=2*(nuL/nu)
 	return gamma, heff
 	
-def convert2exp(gamma,heff):
+def convert2exp(gamma,heff,x0=0.0):
 	hbar=1.0545718 #e-34
 	u=1.660538921 #e-27
 	m=86.909180527*u 
@@ -45,7 +44,8 @@ def convert2exp(gamma,heff):
 	nuL=(np.pi*hbar)/(m*d**2)*10**(11)
 	nu=2*(nuL/heff)
 	s=gamma/(nuL/nu)**2
-	return s, nu
+	x0exp=x0*180.0/np.pi
+	return s, nu, x0exp
 
 def classical(pot,nperiod=100,ny0=20,wdir="classical/",compute=True):
 	# If compute, is true, then it generate, save and plot SPS for a 
@@ -56,27 +56,55 @@ def classical(pot,nperiod=100,ny0=20,wdir="classical/",compute=True):
 		sb.save(wdir)
 	sb.npz2plt(pot,wdir)
 	
-def propagate( grid, pot, iperiod, icheck,wdir,projfile="projs"):
+def propagate( grid, pot, iperiod, icheck,compute=True,read=True,wdir="",datafile="free-prop"):
 	# Propagate a wavefunction over one period/one kick/on length
 	# I periodically saves Husimi representation and wf in a .npz file
 	
-	husimi=Husimi(grid)
-	fo=CATFloquetOperator(grid,pot)
-	n=int(iperiod/icheck)
-	time=np.zeros(n)
-	
-	wfcs=WaveFunction(grid)
-	wfcs.setState("coherent",x0=-pot.x0,xratio=2.0)
-	
-	for i in range(0,iperiod):
-		if i%icheck==0:
-			print(str(i+1)+"/"+str(iperiod))
-			time[int(i/icheck)]=i
-			#husimi.save(wf,wdir+"husimi/"+strint(i/icheck))
-			#wf.save(wdir+"wf/"+strint(i/icheck))
-		fo.propagate(wf)
-	
-	np.savez(wdir+projfile,"w", time=time, projs=projs)
+	if(compute):
+		fo=CATFloquetOperator(grid,pot)
+		
+		n=int(iperiod/icheck)
+		xR=np.zeros(n)
+		xL=np.zeros(n)
+		time=np.zeros(n)
+		
+		wf=WaveFunction(grid)
+		wf.setState("coherent",x0=-pot.x0,xratio=2.0)
+		
+		for i in range(0,iperiod):
+			if i%icheck==0:
+				print(str(i+1)+"/"+str(iperiod))
+				xL[int(i/icheck)]=wf.getxL()
+				xR[int(i/icheck)]=wf.getxR()
+				time[int(i/icheck)]=i*2
+			fo.propagate(wf)
+		
+		np.savez(wdir+datafile,"w", time=time, xL=xL,xR=xR,n=n,paramspot=pot.getParams(),h=grid.h)
+		
+		if(read):
+			data=np.load(wdir+datafile+".npz")
+			e=data['paramspot'][0]
+			gamma=data['paramspot'][1]
+			x0=data['paramspot'][2]
+			h=data['h']
+			s,nu,x0exp=modesbasic.convert2exp(gamma,h,x0)
+			
+			
+			time=data['time']
+			n=data['n']
+			xR=data['xR']
+			xL=data['xL']
+
+			plt.plot(time,xL, c="red")
+			plt.plot(time,xR, c="blue")
+			
+			ax=plt.gca()
+			ax.set_xlabel(r"Périodes")
+			ax.set_ylabel(r"$x gauche et x droite$")
+			ax.set_title(r"$s={:.2f} \quad \nu={:.2f}\ kHz \quad \varepsilon={:.2f}  \quad x_0={:.0f}^\circ$".format(s,nu*10**(-3),e,x0exp))
+			ax.set_xlim(0,max(time))
+			
+			plt.show()
 	
 def period_with_h(e=0.32, gamma=0.29, imax=520, N=128, datafile="split"):
 	# Save tuneling period as a function of h
@@ -100,11 +128,10 @@ def period_with_h(e=0.32, gamma=0.29, imax=520, N=128, datafile="split"):
 		
 	np.savez(datafile,"w", h=h, T=T, qE=qE)
 	
-def period_with_gamma(e, h,imax=250, N=64, compute=True, read=True, datafile="data/split-gamma-3"): #"data/split-gamma-2"
+def period_with_gamma(e, h,imax=500, N=64, compute=False, read=True, datafile="data/split-gamma-3"): #"data/split-gamma-2"
 	if compute == True:
 		# Save tuneling period as a function of h
-		gamma=np.linspace(0.3083,0.3089,imax)
-		print(convert2exp(gamma,h))
+		gamma=np.linspace(0.25,0.35,imax)
 		T=np.zeros(imax)
 		nstates=15
 		qEs=np.zeros((imax,nstates))
@@ -135,16 +162,18 @@ def period_with_gamma(e, h,imax=250, N=64, compute=True, read=True, datafile="da
 	if read == True:
 		data=np.load(datafile+".npz")
 		gamma=data['gamma']
+		
 		e=data['e']
 		
 		h=data['h']
+		print(e,h)
 		T=data['T']
 		qEs=data['qEs']
 		symX=data['symX']
 		imax=data['imax']
 		nstates=data['nstates']
 		overlaps=data['overlaps']
-		s,nu=convert2exp(gamma,h)
+		s,nu,x0=convert2exp(gamma,h,0)
 		ax=plt.gca()
 		ax.set_yscale("log")
 		
@@ -164,7 +193,6 @@ def period_with_gamma(e, h,imax=250, N=64, compute=True, read=True, datafile="da
 			Nsym=overlaps[i2,1]
 			Nasym=overlaps[i1,0]
 		
-		
 		for i in range(0,nstates):
 			cmapSym = plt.cm.get_cmap('Blues')
 			cmapAsym = plt.cm.get_cmap('Reds')
@@ -173,9 +201,9 @@ def period_with_gamma(e, h,imax=250, N=64, compute=True, read=True, datafile="da
 			#print(rgba)
 			for j in range(0,imax):
 				if symX[j,i]==True:
-					plt.scatter(gamma[j],qEs[j,i],c=rgbaSym,s=2.5**2)
+					plt.scatter(gamma[j],qEs[j,i],c=rgbaSym[j],s=2.5**2)
 				else:
-					plt.scatter(gamma[j],qEs[j,i],c=rgbaAsym,s=2.5**2)
+					plt.scatter(gamma[j],qEs[j,i],c=rgbaAsym[j],s=2.5**2)
 		plt.show()
 	
 def explore_epsilon_gamma(wdir="e_gamma/"):
@@ -227,3 +255,80 @@ def true_full_sim():
 			wf.savePNGx("true_sim/wfx-peak/"+strint(i/icheck),maxx0=1.0)
 			#wf.savePNGp("true_sim/wfp/"+strint(i/icheck))
 		fo.propagate(wf)
+		
+		
+def check_projection(grid, pot,iperiod=100,compute=True,read=True,wdir="CAT/"):
+	# Propagate a wavefunction over one period/one kick/on length
+	# I periodically saves Husimi representation and wf in a .npz file
+	
+	#~ double=False
+	#~ cp=ClassicalContinueTimePropagator(pot)
+	#~ sb=StrobosopicPhaseSpaceMP(1000,10,cp,pot) #,pmax=np.pi)
+	#~ sb.save(wdir+"class/",double=double)
+	#~ sb.npz2plt(pot,wdir+"class/",double=double)
+	
+	
+	x0=0.5*np.pi
+
+	time=np.zeros(iperiod)
+	projs=np.zeros((3,iperiod))
+	x=np.zeros((2,iperiod))
+	
+	fo=CATFloquetOperator(grid,pot,beta=-0.5*grid.h/6.0)
+	
+	wf=WaveFunction(grid)
+	wf.setState("coherent",x0=-pot.x0,xratio=2.0)
+	
+	fo.diagonalize()
+	fo.computeOverlapsAndQEs(wf)
+	wf1,wf2,wf3=fo.get3Evec()
+	
+	sym1=WaveFunction(grid)
+	sym1.setState("coherent",x0=x0,xratio=2.0)
+	sym2=WaveFunction(grid)
+	sym2.setState("coherent",x0=-x0,xratio=2.0)
+	
+	sym=sym1+sym2
+	sym.normalizeX()
+	sym.x2p()
+			
+	
+	wf4=(sym%wf2)*wf2+(sym%wf3)*wf3
+	wf5=-(sym%wf3)*wf2+(sym%wf2)*wf3
+	plt.plot(grid.x,abs(wf4.x)**2)
+	plt.plot(grid.x,abs(wf5.x)**2)
+	plt.show()
+	
+	
+	#~ wf4=(sym%wf1)*wf2+(sym%wf3)*wf3
+	#~ wf5=-(sym%wf3)*wf2+(sym%wf1)*wf3
+	#~ plt.plot(grid.x,abs(wf4.x)**2)
+	#~ plt.plot(grid.x,abs(wf5.x)**2)
+	#~ plt.show()
+	
+	#~ husimi=Husimi(grid)
+	#~ husimi.save(wf4,wdir+"husimi/1")
+	#~ husimi.npz2png(wdir+"husimi/1")
+	#~ husimi.save(wf5,wdir+"husimi/2")
+	#~ husimi.npz2png(wdir+"husimi/2")
+	
+	plt.plot(grid.x,np.real(wf1.x),c="red")
+	plt.plot(grid.x,np.real(wf2.x),c="blue")
+	plt.plot(grid.x,np.real(wf3.x),c="green")
+	plt.show()
+	
+	for i in range(0,iperiod):
+		time[i]=2*i
+		fo.propagate(wf)
+		projs[:,i]=wf//wf1,wf//wf4,wf//wf5
+		x[:,i]=wf.getxL(),wf.getxR()
+	
+	#~ np.savez(wdir+"projs","w", projs=projs,time=time)
+	
+	plt.plot(time,projs[1,:])
+	plt.plot(time,projs[2,:])
+	plt.show()
+	
+	plt.plot(time,x[0,:])
+	plt.plot(time,x[1,:])
+	plt.show()

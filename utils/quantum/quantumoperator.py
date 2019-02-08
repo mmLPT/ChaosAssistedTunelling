@@ -109,6 +109,8 @@ class QuantumTimePropagator(QuantumOperator):
 	def propagateGP(self,wf):
 		# Propagate over one period/kick/arbitray time with interactions
 		for idt in range(0,self.idtmax):
+			if idt%100==0:
+				print(idt)
 			wf.p=wf.p*self.Up 
 			wf.p2x() 
 			wf.x=wf.x*np.exp(-(1j/self.grid.h)*(self.potential.Vx(self.grid.x,np.conj(wf.x)*wf.x,idt*self.dt))*self.dt)
@@ -144,29 +146,6 @@ class CATFloquetOperator(QuantumTimePropagator):
 			self.overlaps[i]=self.eigenvec[i]//wf
 			self.qE[i]=-np.angle(self.eigenval[i])*(self.h/self.T0)
 			
-			
-		#~ # Find the two states that tunnels
-		#~ max1=np.argmax(self.proj)
-		#~ proj1=self.proj[max1]
-		#~ self.proj[max1]=0.0
-		#~ max2=np.argmax(self.proj)
-		#~ self.proj[max1]=proj1
-		
-		#~ # Eigenvectors are ordered by quasi-energies qE1<qE2
-		#~ # This can be differents to projections ordering!
-		
-		#~ # Check basic ordering
-		#~ if self.qE[max1]<self.qE[max2]:
-			#~ self.iqgs=max1
-			#~ self.iqfes=max2
-		#~ else:
-			#~ self.iqgs=max2
-			#~ self.iqfes=max1
-		
-		#~ # Check if this is not a 
-		#~ if self.diffqE1qE2(self.iqfes,self.iqgs)<0:
-			#~ self.iqfes,self.iqgs=self.iqgs,self.iqfes
-			
 	def getTunnelingPeriod(self):
 		
 		# Find the two states that tunnels
@@ -189,7 +168,11 @@ class CATFloquetOperator(QuantumTimePropagator):
 			qes[i]=self.qE[ind[i]]
 			projections[i]=self.overlaps[ind[i]]
 			symX[i]=self.eigenvec[ind[i]].isSymetricInX()
-		return qes, projections, symX, ind	
+		return qes, projections, symX, ind
+		
+	def get3Evec(self):
+		ind=np.flipud(np.argsort(self.overlaps))
+		return self.eigenvec[ind[0]],self.eigenvec[ind[1]],self.eigenvec[ind[2]]	
 		
 	def getQE(self,i0):
 		# Returns either the quasi-energy of quasi-ground state or quasi-first excited state
@@ -261,7 +244,7 @@ class QuantumImaginaryTimePropagator(QuantumOperator):
 		self.Up=np.zeros(grid.N,dtype=np.complex_)
 		self.Up=np.exp(-(self.dt/self.grid.h)*(grid.p**2/2))
 		
-		self.muerrorref=1.0e-12
+		self.muerrorref=1.0e-14
 		
 	def Ux(self, wfx):
 		# Split step x propagator
