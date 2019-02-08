@@ -18,7 +18,7 @@ def run_info():
         wdir=sys.argv[2]+"/"
         return data['runid'], wdir
 
-def distribution_omega(runid,grid,pot,Ndbeta=2.0,wdir=""):
+def distribution_omega(runid,grid,pot,Ndbeta=2.0,wdir="",ibetamax=ibetamax):
 	# Compute the distribution of omega tunnel for a give distribution of
 	# quasimomentum
 

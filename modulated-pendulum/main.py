@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import modesbasic
 import modesxconfinment
 import modesquasimomentum
-import modesinitialstate
+#~ import modesinitialstate
 
 from utils.quantum import *
 from utils.classical import *
