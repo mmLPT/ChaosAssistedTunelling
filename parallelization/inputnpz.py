@@ -6,7 +6,7 @@ from utils.toolsbox import *
 inputfile="data/input/s-27.84-nu-80.0-Ndbeta-8.0-beta0=0.5"
 
 # general information
-N=64
+N=128
 description="free propagation averaged"
 
 # potential parameters
@@ -22,6 +22,12 @@ gamma, h = convert2theory(s=s, nu=nu)
 beta0=0.5*h
 Ndbeta=8.0
 dbeta=h/(3.0*Ndbeta)
+
+# spectrum
+h=0.0
+hmin=0.10
+hmax=0.45
+nstates=30
 
 # i/o
 iperiod=3000

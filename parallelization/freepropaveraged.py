@@ -15,26 +15,30 @@ if mode=="compute":
 	# Loading parameters
 	inputfile=sys.argv[3]
 	data=np.load(inputfile+".npz")
-
-	N=int(data['N'])
-	print(N)
+	
 	description=data['description']
+	N=int(data['N'])
+	
 	e=data['e']
 	x0=data['x0']
 	h=data['h']
 	gamma=data['gamma']
+	
 	beta0=data['beta0']
 	Ndbeta=data['Ndbeta']
 	dbeta=data['dbeta']
+	
 	iperiod=int(data['iperiod'])
 	icheck=int(data['icheck'])
-	s,nu,x0exp = convert2exp(gamma,h,x0)
-	pot=PotentialMP(e,gamma)
-	grid=Grid(N,h)
 	sizet=int(iperiod/icheck)
+	
+	pot=PotentialMP(e,gamma)
+
 	if x0==0.0:
 		x0=pot.x0
 	data.close()
+	
+	s,nu,x0exp = convert2exp(gamma,h,x0)
 	
 	# Getting ID of the run
 	runid=int(sys.argv[5])
@@ -45,6 +49,7 @@ if mode=="compute":
 		
 		np.savez(wdir+"params","w", description=description, nruns=nruns, e=e,gamma=gamma,h=h,N=N,x0=x0,s=s,nu=nu,x0exp=x0exp,beta0=beta0,dbeta=dbeta,Ndbeta=Ndbeta,iperiod=iperiod,sizet=sizet)
 
+	grid=Grid(N,h)
 	
 	xR=np.zeros(sizet)
 	xL=np.zeros(sizet)

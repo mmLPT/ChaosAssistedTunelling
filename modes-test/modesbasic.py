@@ -7,45 +7,7 @@ from utils.quantum import *
 from utils.classical import *
 from utils.systems.modulatedpendulum import *
 from utils.systems.general import *
-
-def getg(h):
-			
-	#nuX=25.0
-	nuX=25.0
-	nuL=8113.9
-	nuperp=86
-	
-	a=5.0*10**(-9)
-	d=532*10**(-9)
-	Nat=10**5
-
-	g=2*np.pi*h**2*a*Nat*nuperp/(2*nuL*d)
-	print("g=",g)
-	return 0.04
-
-def getomegax(h):
-	return (h*25.0)/(2*8113.9)
-
-def convert2theory(s,nu):
-	hbar=1.0545718 #e-34
-	u=1.660538921 #e-27
-	m=86.909180527*u 
-	d=532.0 #e-9
-	nuL=(np.pi*hbar)/(m*d**2)*10**(11)
-	gamma=s*(nuL/nu)**2
-	heff=2*(nuL/nu)
-	return gamma, heff
-	
-def convert2exp(gamma,heff,x0=0.0):
-	hbar=1.0545718 #e-34
-	u=1.660538921 #e-27
-	m=86.909180527*u 
-	d=532.0 #e-9
-	nuL=(np.pi*hbar)/(m*d**2)*10**(11)
-	nu=2*(nuL/heff)
-	s=gamma/(nuL/nu)**2
-	x0exp=x0*180.0/np.pi
-	return s, nu, x0exp
+from utils.toolsbox import *
 
 def classical(pot,nperiod=100,ny0=20,wdir="classical/",compute=True):
 	# If compute, is true, then it generate, save and plot SPS for a 
@@ -87,7 +49,7 @@ def propagate( grid, pot, iperiod, icheck,compute=True,read=True,wdir="",datafil
 			gamma=data['paramspot'][1]
 			x0=data['paramspot'][2]
 			h=data['h']
-			s,nu,x0exp=modesbasic.convert2exp(gamma,h,x0)
+			s,nu,x0exp=convert2exp(gamma,h,x0)
 			
 			
 			time=data['time']
