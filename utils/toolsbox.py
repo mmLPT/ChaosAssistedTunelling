@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def strint(i):
 	return "{:05d}".format(int(i))
 
