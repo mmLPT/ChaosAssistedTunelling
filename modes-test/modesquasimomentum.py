@@ -11,7 +11,7 @@ from utils.systems.general import *
 import utils.plot.read as readw
 import modesbasic
 
-def free_prop_averaged(grid, pot,x0,Ndbeta=2.0,ibetamax=1,iperiod=100,compute=True,read=True,wdir="averaged-beta/noname/"):
+def free_prop_averaged(grid, pot,x0,Ndbeta=2.0,ibetamax=1,iperiod=100,compute=True,read=True,wdir="averaged-beta/noname/",beta0=0.0):
 	# Mode to study the free propagation with split step method
 	# We look at "left" and "right" observable over time which micmic 
 	# the exprimental setup.
@@ -31,7 +31,7 @@ def free_prop_averaged(grid, pot,x0,Ndbeta=2.0,ibetamax=1,iperiod=100,compute=Tr
 			print(j,"/",ibetamax-1)
 			
 			
-			beta=np.random.normal(0.0, grid.h/(3.0*Ndbeta))
+			beta=np.random.normal(beta0, grid.h/(3.0*Ndbeta))
 			if ibetamax==1:
 				beta=0.0
 				
@@ -69,8 +69,8 @@ def free_prop_averaged(grid, pot,x0,Ndbeta=2.0,ibetamax=1,iperiod=100,compute=Tr
 			data=np.load(wdir+"run-"+strint(j)+".npz")
 			xR=data['xR']
 			xL=data['xL']
-			plt.plot(time/2.0,xL, c="red")
-			plt.plot(time/2.0,xR, c="blue")
+			plt.plot(time,xL, c="red")
+			plt.plot(time,xR, c="blue")
 			for i in range(0,n):
 				xRav[i]=xRav[i]+xR[i]
 				xLav[i]=xLav[i]+xL[i]
@@ -80,8 +80,8 @@ def free_prop_averaged(grid, pot,x0,Ndbeta=2.0,ibetamax=1,iperiod=100,compute=Tr
 		A=xRav[0]
 		
 
-		plt.plot(time/2.0,xLav/A, c="red")
-		plt.plot(time/2.0,xRav/A, c="blue")
+		plt.plot(time,xLav/A, c="red")
+		plt.plot(time,xRav/A, c="blue")
 		
 		#~ x1,y1=np.loadtxt("exp-data/pop_non_tunnel.txt",usecols=(0, 1), unpack=True)
 		#~ x2,y2=np.loadtxt("exp-data/pop_tunnel.txt",usecols=(0, 1), unpack=True)
@@ -95,7 +95,7 @@ def free_prop_averaged(grid, pot,x0,Ndbeta=2.0,ibetamax=1,iperiod=100,compute=Tr
 		ax.set_ylabel(r"$Observable de position normalisée$")
 		ax.set_title(r"$s={:.2f} \quad \nu={:.2f}\ kHz \quad \varepsilon={:.2f}  \quad x_0={:.0f}^\circ$".format(s,nu*10**(-3),e,x0exp))
 		ax.set_ylim(0,1.0)
-		ax.set_xlim(0,max(time/2.0))
+		ax.set_xlim(0,max(time))
 		
 		plt.show()
 
@@ -119,7 +119,7 @@ def distribution_omega(grid,pot,Ndbeta=2.0,compute=True,read=True,ibetamax=1500,
 			if(scan):
 				beta[i]=i*grid.h/ibetamax
 			else:
-				beta[i]=np.random.normal(0.0, grid.h/(3.0*Ndbeta))
+				beta[i]=np.random.normal(2*grid.h*(3.0*Ndbeta), grid.h/(3.0*Ndbeta))
 			
 			fo=CATFloquetOperator(grid,pot,beta=beta[i])
 			

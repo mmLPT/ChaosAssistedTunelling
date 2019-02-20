@@ -1,4 +1,5 @@
 import sys
+import os
 sys.path.insert(0, '..') 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,36 +26,28 @@ else:
 	compute=False
 	read2=False
 	print("missing arguments")
+	
+wdir=sys.argv[3]
+if not os.path.exists(wdir):
+    os.mkdir(wdir)
 
 N=64
 
 ########################################################################
-# Première oscillation
-#~ x0=0.5*np.pi
-x0=35.0*np.pi/180.0
+gamma, h = modesbasic.convert2theory(s=25.84,nu=72.0*10**3)
 e=0.44
-#~ gamma, h = modesbasic.convert2theory(s=27.53,nu=70.8*10**3) 
-########################################################################
-#~ e=0.4547
-#~ x0=35.0/180.0*np.pi
-#~ gamma, h = modesbasic.convert2theory(s=24.27, nu=70.8*10**3) #dernière run
-########################################################################
-#~ gamma, h = modesbasic.convert2theory(s=13.75, nu=55.6*10**3) #3
-gamma, h = modesbasic.convert2theory(s=27.84, nu=80.0*10**3) #3
-########################################################################
+x0=90.0*np.pi/180.0
+
 #~ e=0.02
 #~ gamma=0.25
 #~ h=0.2
-########################################################################
-e=0.290
-gamma=0.305
-h=0.250
-########################################################################
 
 pot=PotentialMP(e,gamma)
 grid=Grid(N,h)
+#~ x0=pot.x0
 
-x0=pot.x0
+#~ x0=35.0/180.0*np.pi
+
 
 #~ modesbasic.classical(pot,nperiod=250,ny0=50,wdir="regular-tunneling/",compute=compute)
 #~ modesbasic.propagate( grid, pot, compute=compute, read=read, iperiod=1000, icheck=1,wdir="quasimomentum/",datafile="blocked")
@@ -70,12 +63,12 @@ x0=pot.x0
 #~ modesxconfinment.check_T_with_confinment(imax=220,e=e,gamma=gamma)
 #~ modesxconfinment.symetry_of_gs_with_h(N=64, e=0.315, gamma=0.290, datafile="data/croisement3",compute=compute,read=read)
 
-#~ modesquasimomentum.free_prop_averaged(grid,pot,x0,iperiod=50,ibetamax=125,wdir="test/")
-#~ modesquasimomentum.free_prop_averaged(grid,pot,x0,compute=compute,read=read,iperiod=1000,ibetamax=100,wdir="quasimomentum/freepropaveraged/") 
-#~ modesquasimomentum.free_prop_averaged(grid,pot,x0,Ndbeta=2.0,compute=compute,read=read,iperiod=100,ibetamax=25,wdir="quasimomentum/test/") 
+#~ modesquasimomentum.free_prop_averaged(grid,pot,x0,iperiod=50,ibetamax=125,wdir=wdir)
+#~ modesquasimomentum.free_prop_averaged(grid,pot,x0,compute=compute,read=read,iperiod=1000,ibetamax=100,wdir=wdir) 
+modesquasimomentum.free_prop_averaged(grid,pot,x0,Ndbeta=2.0,compute=compute,read=read,iperiod=100,ibetamax=50,wdir=wdir,beta0=0.0) 
 
 #~ modesquasimomentum.distribution_omega(grid,pot,compute=compute,read=read,ibetamax=500,wdir="quasimomentum/",datafile="distribution4")
-modesquasimomentum.distribution_omega(grid,pot,compute=compute,read=read,ibetamax=2500,wdir="quasimomentum/",datafile="scan",scan=True)
+#~ modesquasimomentum.distribution_omega(grid,pot,compute=compute,read=read,ibetamax=2500,wdir="quasimomentum/",datafile="scan",scan=True)
 
 #~ modesinitialstate.imaginary(gamma,e,h)
 #~ modesinitialstate.loading(gamma,e,h)
