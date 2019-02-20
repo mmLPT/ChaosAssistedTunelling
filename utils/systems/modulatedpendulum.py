@@ -8,7 +8,7 @@ from utils.systems.potential import *
 from utils.quantum.husimi import *
 import utils.plot.read as read
 from utils.plot.latex import *
-import modesbasic
+from toolsbox import *
 
 # This script contains:  4 classes and 4 functions
 
@@ -75,7 +75,7 @@ class PotentialMPasym(PotentialMP):
 	def __init__(self,e,gamma,x1,h):
 		PotentialMP.__init__(self,e,gamma)
 		self.x1=x1
-		self.omega2= (modesbasic.getomegax(h))**2
+		self.omega2= (getomegax(h))**2
 		
 	def Vx(self,x,t=np.pi/2.0):
 		return PotentialMP.Vx(self,x,t)+self.Vxasym(x)
@@ -95,9 +95,9 @@ class PotentialMPasymGP(PotentialMP):
 	# Longitudinal confinment + GP
 	def __init__(self,e,gamma,h):
 		PotentialMP.__init__(self,e,gamma)
-		self.omega2=(modesbasic.getomegax(h))**2
+		self.omega2=(getomegax(h))**2
 		self.isGP=True
-		self.g=modesbasic.getg(h)
+		self.g=getg(h)
 		
 	def Vx(self,x,wfx,t=np.pi/2.0):
 		return PotentialMP.Vx(self,x,t)+PotentialMP.VGP(self,wfx)+0.5*self.omega2*x**2
@@ -107,14 +107,14 @@ class PotentialMPloading(Potential):
 	# This micmics the loading of the optical lattice in experiments
 	def __init__(self,e,gammaf,h):
 		Potential.__init__(self)
-		self.omega2=(modesbasic.getomegax(h))**2
+		self.omega2=(getomegax(h))**2
 		
 		self.T0=50000
 		self.idtmax=int(self.T0*10)
 		print(self.idtmax)
 		
 		self.isGP=True
-		self.g=modesbasic.getg(h)
+		self.g=getg(h)
 		
 		self.isTimeDependent=True
 
