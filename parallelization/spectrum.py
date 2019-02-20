@@ -8,13 +8,13 @@ from utils.quantum import *
 from utils.classical import *
 from utils.systems.modulatedpendulum import *
 
-mode=sys.argv[1]
-wdir=sys.argv[2]
-
 # This scripts makes possibles to 
 # 1. compute in // the spectrum of qE for differents value of [h]
 # 2. gather the information
 # 3. plot the spectrum
+
+mode=sys.argv[1]
+wdir=sys.argv[2]
 
 if mode=="compute":
 	# Loading parameters
@@ -65,3 +65,4 @@ if mode=="compute":
 	qEs[i],overlaps[i],symX[i]=fo.getQEsOverlapsSymmetry(nstates)
 		
 	np.savez(wdir+"params.npz","w", e=e,h=h, gamma=gamma, T=T, qEs=qEs, overlaps=overlaps,symX=symX, h=h, nstates=nstates)
+

@@ -8,6 +8,11 @@ from utils.quantum import *
 from utils.classical import *
 from utils.systems.modulatedpendulum import *
 
+# This scripts makes possibles to 
+# 1. compute in // the free propagation for different quasi-momentum
+# 2. gather and average the results
+# 3. plot the averaged data
+ 
 mode=sys.argv[1]
 wdir=sys.argv[2]
 

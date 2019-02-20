@@ -12,7 +12,7 @@ module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
 nruns=1000
-name=s-27.84-nu-80.0-Ndbeta-8.0-beta0=0.25
+name=s-27.84-nu-80.0-Ndbeta-2.0.npz
 wdir=data/output/$name-${SLURM_JOB_ID}
 inputfile=data/input/$name
 
