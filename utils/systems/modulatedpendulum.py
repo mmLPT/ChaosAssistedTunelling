@@ -8,7 +8,7 @@ from utils.systems.potential import *
 from utils.quantum.husimi import *
 import utils.plot.read as read
 from utils.plot.latex import *
-from toolsbox import *
+from utils.toolsbox import *
 
 # This script contains:  4 classes and 4 functions
 
