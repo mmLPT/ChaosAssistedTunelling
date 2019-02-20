@@ -7,7 +7,6 @@ from utils.toolsbox import *
 from utils.quantum import *
 from utils.classical import *
 from utils.systems.modulatedpendulum import *
- 
 
 mode=sys.argv[1]
 wdir=sys.argv[2]
@@ -29,7 +28,7 @@ if mode=="compute":
 	dbeta=data['dbeta']
 	iperiod=int(data['iperiod'])
 	icheck=int(data['icheck'])
-	s,nu,x0exp = modesbasic.convert2exp(gamma,h,x0)
+	s,nu,x0exp = convert2exp(gamma,h,x0)
 	pot=PotentialMP(e,gamma)
 	grid=Grid(N,h)
 	sizet=int(iperiod/icheck)

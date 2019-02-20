@@ -16,7 +16,7 @@ x0=35.0*np.pi/180.0
 #h=0.250
 s=27.84
 nu=80.0*10**3
-gamma, h = modesbasic.convert2theory(s=s, nu=nu)
+gamma, h = convert2theory(s=s, nu=nu)
 
 # quasi-momentum
 beta0=0.5*h
