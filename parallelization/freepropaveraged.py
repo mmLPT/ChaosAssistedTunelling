@@ -2,10 +2,8 @@ import sys
 sys.path.insert(0, '..')
 import numpy as np
 import matplotlib.pyplot as plt
-import modesbasic
-import modesxconfinment
-import modesquasimomentum
 
+from utils.toolsbox import *
 from utils.quantum import *
 from utils.classical import *
 from utils.systems.modulatedpendulum import *

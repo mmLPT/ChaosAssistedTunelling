@@ -1,5 +1,5 @@
 import numpy as np
-import modesbasic
+from utils.toolsbox import *
 
 inputfile="data/input/s-27.84-nu-80.0-Ndbeta-8.0-beta0=0.5"
 
