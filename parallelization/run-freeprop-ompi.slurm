@@ -12,9 +12,10 @@ module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
 nruns=1000
-name=s-27.84-nu-80.0-Ndbeta-12.0
-wdir=data/output/$name-${SLURM_JOB_ID}
+name=s-28-84-nu-80
+wdir=data/output/$name-freeprop-${SLURM_JOB_ID}
 inputfile=data/input/$name
 
 srun chdb --in-type "0 $nruns" --report "$wdir/report.txt" --out-dir $wdir --command "python3 freepropaveraged.py compute $wdir/ $inputfile $nruns %path%"
+python3 freepropaveraged.py average $wdir/ 
 

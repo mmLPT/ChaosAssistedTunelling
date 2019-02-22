@@ -3,34 +3,32 @@ sys.path.insert(0, '..')
 import numpy as np
 from utils.toolsbox import *
 
-inputfile="data/input/s-27.84-nu-80.0-Ndbeta-8.0-beta0=0.5"
+inputfile="data/input/s-28-84-nu-80"
 
 # general information
-N=128
-description="free propagation averaged"
+N=64
+description="around 1st oscillation"
 
 # potential parameters
 e=0.44
-x0=35.0*np.pi/180.0
-#gamma=0.305
+x0=1.50
+#gamma=0.35
 #h=0.250
-s=27.84
+s=28.84
 nu=80.0*10**3
 gamma, h = convert2theory(s=s, nu=nu)
 
 # quasi-momentum
-beta0=0.5*h
-Ndbeta=8.0
+beta0=0.0*h
+Ndbeta=6.0
 dbeta=h/(3.0*Ndbeta)
 
 # spectrum
-h=0.0
-hmin=0.10
+hmin=0.15
 hmax=0.45
 nstates=30
 
-# i/o
+# free propagation/classical
 iperiod=3000
-icheck=1
 
-np.savez(inputfile,"w", description=description, N=N, e=e, gamma=gamma, h=h, x0=x0, beta0=beta0, dbeta=dbeta, Ndbeta=Ndbeta, iperiod=iperiod, icheck=icheck)
+np.savez(inputfile,"w", description=description, N=N, e=e, gamma=gamma, h=h, x0=x0, beta0=beta0, dbeta=dbeta, Ndbeta=Ndbeta, iperiod=iperiod,hmin=hmin,hmax=hmax,nstates=nstates)

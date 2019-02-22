@@ -86,7 +86,6 @@ if mode=="compute":
 
 	# Propagate the wavefunction over iperiod storing the observable every time
 	for i in range(0,iperiod):
-		print(i)
 		xL[i]=wf.getxL()
 		xR[i]=wf.getxR()
 		fo.propagate(wf)
@@ -95,38 +94,107 @@ if mode=="compute":
 
 
 if mode=="process":
-	ibeta=int(sys.argv[3])-1 # Id of the current run
+	# Enter in each h directory to average the free propagation over quasimomentum
 
+	# Loading general parameters of the run
 	data=np.load(wdir+"params.npz")
 	nbeta=data['nbeta']
 	nh=data['nh']
 	iperiod=data['iperiod']
+	hmin=data['hmin']
+	hmax=data['hmax']
+	e=data['e']
+	gamma=data['gamma']
+	x0=data['x0']
 	data.close()
+	h=np.linspace(hmin,hmax,nh)
 	time=2.0*np.linspace(0.0,1.0*iperiod,num=iperiod,endpoint=False)
 
+	# Get the h index
+	ih=int(sys.argv[3])-1 
+
+	# Arrays to store averaged observables left/right
 	xRav=np.zeros(iperiod)
 	xLav=np.zeros(iperiod)
 		
-	for i in range(0,nbeta):
-		data=np.load(wdir+str(ibeta)+"/"+str(i)+".npz")
+	# Averagin over the quasimomentum for a given h
+	for ibeta in range(0,nbeta):
+		data=np.load(wdir+str(ih)+"/"+str(ibeta)+".npz")
 		xR=data['xR']
 		xL=data['xL']
 		xRav=xRav+xR
 		xLav=xLav+xL
 		data.close()
 			
+	# Normalize the observables
 	A=max(xRav[0],xLav[0])
 	xLav=xLav/A
 	xRav=xRav/A
-	np.savez(wdir+"averaged-data","w",  xL = xLav, xR=xRav,time=time)
-	data=np.load(wdir+"averaged-data.npz")
+
+	# Saving the data in averaged file
+	np.savez(wdir+str(ih)+"/averaged","w",  xL = xLav, xR=xRav,time=time)
+
+	# Plotting
+	data=np.load(wdir+str(ih)+"/averaged.npz")
 	time=data['time']
 	xL=data['xL']
 	xR=data['xR']
 	data.close()
 	ax=plt.gca()
-	ax.set_xlim(0,500.0)
+	ax.set_xlim(0,max(time))
 	ax.set_ylim(0,1.0)
 	plt.plot(time,xL, c="red")
 	plt.plot(time,xR, c="blue")
-	plt.savefig(wdir+"pictures/"+str(ibeta)+".png")
+	plt.savefig(wdir+"pictures/"+strint(ih)+".png") # exporting figure as png
+
+if mode=="final":
+	data=np.load(wdir+"params.npz")
+	nh=data['nh']
+	iperiod=data['iperiod']
+	hmin=data['hmin']
+	hmax=data['hmax']
+	e=data['e']
+	gamma=data['gamma']
+	x0=data['x0']
+	data.close()
+
+	density=np.zeros((int(iperiod/2)+1,nh))
+	h=np.linspace(hmin,hmax,nh)
+	print(nh)
+	omegas=np.fft.rfftfreq(int(iperiod),d=0.5)*2*np.pi
+
+	a=0
+	time=2.0*np.linspace(0.0,1.0*iperiod,num=iperiod,endpoint=False)
+	for ih in range(0,nh):
+		data=np.load(wdir+str(ih)+"/averaged.npz")
+		xL=data['xL']
+		xR=data['xR']
+		#plt.plot(xL)
+		#plt.show()
+		xLf=np.abs(np.fft.rfft(xL))
+		xRf=np.abs(np.fft.rfft(xR))
+		xLf[0]=0.0
+		xRf[0]=0.0
+		density[:,ih]=(xLf+xRf)*0.5
+		a=max(a,max(density[:,ih]))
+	density=5.0*density/a
+
+	ax=plt.gca()
+	ax.set_xlim(min(h),max(h))
+	ax.set_xlabel("h")
+	ax.set_ylabel("1/omega")
+	omegas[0]=omegas[1]
+	#ax.set_ylim(min(1.0/omegas),max(1.0/omegas)/2.0)
+	#ax.set_ylim(min(omegas),max(omegas))
+	ax.set_yscale("log")
+	levels = MaxNLocator(nbins=100).tick_values(0.0,1.0)	
+	cmap = plt.get_cmap('gnuplot')
+	norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+	#plt.contourf(h,omegas,np.sqrt(density), levels=levels,cmap=cmap)
+	#plt.pcolormesh(h,1/omegas,np.sqrt(density), norm=norm,cmap=cmap)
+	plt.pcolormesh(h,1/omegas,np.sqrt(density), norm=norm,cmap=cmap)
+	plt.show()
+
+	
+
+

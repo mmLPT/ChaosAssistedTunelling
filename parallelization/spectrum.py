@@ -8,6 +8,10 @@ from utils.quantum import *
 from utils.classical import *
 from utils.systems.modulatedpendulum import *
 
+# State: stable [22/02/2019]
+
+# To be used with "run-spectrum.slurm"
+
 # This scripts makes possibles to 
 # 1. compute in // the spectrum of qE for differents value of [h]
 # 2. gather the information
@@ -25,6 +29,9 @@ mode=sys.argv[1]
 wdir=sys.argv[2]
 
 if mode=="compute":
+	# This mode compute the spectrum for a single value of h
+	# It is made to be proceed on a single process
+
 	# Loading input file
 	inputfile=sys.argv[3]
 	data=np.load(inputfile+".npz")
@@ -79,6 +86,9 @@ if mode=="compute":
 	np.savez(wdir+str(runid),"w", h=h, qEs=qEs, overlaps=overlaps,symX=symX)
 
 if mode=="gather":
+	# This mode collect the spectrum for each value of h and make a single file
+
+	# Reading inputfile
 	data=np.load(wdir+"params.npz")
 	nruns=data['nruns']
 	nstates=data['nstates']
@@ -88,11 +98,13 @@ if mode=="gather":
 	gamma=data['gamma']
 	data.close()
 
+	# Create array to store data
 	qEs=np.zeros((nruns,nstates))
 	overlaps=np.zeros((nruns,nstates))
 	symX=np.zeros((nruns,nstates))
 	h=np.linspace(hmin,hmax,nruns)
 	
+	# For each runs read the output and add it to the new array
 	for i in range(0,nruns):
 		data=np.load(wdir+str(i)+".npz")
 		qEs[i]=data['qEs']
@@ -100,9 +112,11 @@ if mode=="gather":
 		symX[i]=data['symX']
 		data.close()
 
+	# Save the array
 	np.savez(wdir+"gathered","w", e=e,gamma=gamma,h=h,qEs=qEs,overlaps=overlaps,symX=symX,nstates=nstates,nruns=nruns)
 
 if mode=="plot":
+	# Reading inputfile
 	data=np.load(wdir+"gathered.npz")
 	e=data['e']
 	gamma=data['gamma']
@@ -114,33 +128,40 @@ if mode=="plot":
 	symX=data['symX']
 	data.close()
 
-	i1=np.argmax(overlaps[:,0])
-	i2=np.argmax(overlaps[:,1])
-
-	if symX[i1,0]==True:
-		Nsym=overlaps[i1,0]
-		Nasym=overlaps[i2,1]
-	else:
-		Nsym=overlaps[i2,1]
-		Nasym=overlaps[i1,0]
-
+	# General setup for plotting
 	ax=plt.gca()
 	ax.set_xlabel(r"h")
 	ax.set_ylabel(r"$qEs/h$")
 	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.2f}$".format(e,gamma))
-	for i in range(4,-1,-1):
+
+	for irun in range(0,nruns):
+		# We want to rescale the overlap to 1 for each value of h
+		# to do so we start focusing on the 2 states with highest overlap
+		# check if they are sym or asym
+		if symX[irun,0]==True:
+			Nsym=overlaps[irun,0]
+			Nasym=overlaps[irun,1]
+		else:
+			Nsym=overlaps[irun,1]
+			Nasym=overlaps[irun,0]
+
+		# Then we create colormap
 		cmapSym = plt.cm.get_cmap('Blues')
 		cmapAsym = plt.cm.get_cmap('Reds')
-		rgbaSym = cmapSym(overlaps[:,i]/Nsym)
-		rgbaAsym = cmapAsym(overlaps[:,i]/Nasym)
-		#print(rgba)
-		print(i+1,"/",nstates)
-		for j in range(0,nruns):
-			if symX[j,i]==True:
-				plt.scatter(h[j],qEs[j,i]/h[j],c=rgbaSym[j],s=2.5**2)
+
+		# And generate on of lenght nstates scaled by weight for sym and asym
+		# so that it goes from 0 to 1
+		rgbaSym = cmapSym(overlaps[irun,:]/Nsym)
+		rgbaAsym = cmapAsym(overlaps[irun,:]/Nasym)
+		print(irun)
+
+		for istate in range(4,-1,-1):
+			if symX[irun,istate]==True:
+				plt.scatter(h[irun],qEs[irun,istate]/h[irun],c=rgbaSym[istate],s=1.0**2)
 			else:
-				plt.scatter(h[j],qEs[j,i]/h[j],c=rgbaAsym[j],s=2.5**2)
+				plt.scatter(h[irun],qEs[irun,istate]/h[irun],c=rgbaAsym[istate],s=1.0**2)
 	plt.show()
+	#plt.savefig(wdir+"spectrum.png") 
 
 
 	
