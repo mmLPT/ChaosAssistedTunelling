@@ -22,7 +22,7 @@ def getg(h):
 def getomegax(h):
 	return (h*25.0)/(2*8113.9)
 
-def convert2theory(s,nu):
+def convert2theory(s,nu,x0exp=0.0):
 	hbar=1.0545718 #e-34
 	u=1.660538921 #e-27
 	m=86.909180527*u 
@@ -30,7 +30,11 @@ def convert2theory(s,nu):
 	nuL=(np.pi*hbar)/(m*d**2)*10**(11)
 	gamma=s*(nuL/nu)**2
 	heff=2*(nuL/nu)
-	return gamma, heff
+	x0=x0exp*np.pi/180
+	if x0==0.0:
+		return gamma, heff
+	else:
+		return gamma, heff, x0
 	
 def convert2exp(gamma,heff,x0=0.0):
 	hbar=1.0545718 #e-34

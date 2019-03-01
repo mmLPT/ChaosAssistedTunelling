@@ -12,8 +12,8 @@ module purge
 module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
-nh=200
-name=allin1-125233
+nh=500
+name=g-0-32-allin-128803
 
 srun chdb --in-type "1 $nh" --command "python3 all-in.py process data/output/$name/ %path%"
 

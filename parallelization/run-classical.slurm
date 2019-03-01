@@ -13,7 +13,7 @@ module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
 nruns=121
-name=s-28-84-nu-80
+name=10-moyen
 wdir=data/output/$name-classical-${SLURM_JOB_ID}
 inputfile=data/input/$name
 

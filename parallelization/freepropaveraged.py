@@ -69,6 +69,7 @@ if mode=="compute":
 	# Create the array to store the observables left/right
 	xR=np.zeros(iperiod)
 	xL=np.zeros(iperiod)
+	xM=np.zeros(iperiod)
 	
 	# Generate quasimomentum value
 	beta=np.random.normal(beta0, dbeta)
@@ -81,13 +82,15 @@ if mode=="compute":
 	wf.setState("coherent",x0=x0,xratio=2.0)
 
 	# Propagate the wavefunction over iperiods
+	xm=0.05*np.pi
 	for i in range(0,iperiod):
-		xL[int(i)]=wf.getxL()
-		xR[int(i)]=wf.getxR()
+		xL[i]=wf.getxM(-np.pi,-xm)
+		xM[i]=wf.getxM(-xm,xm)
+		xR[i]=wf.getxM(xm,np.pi)
 		fo.propagate(wf)
 	
 	# Save the observables
-	np.savez(wdir+str(runid),"w", beta=beta, xL = xL, xR=xR)
+	np.savez(wdir+str(runid),"w", beta=beta, xL = xL, xR=xR, xM=xM)
 
 
 if mode=="average":
@@ -104,23 +107,27 @@ if mode=="average":
 	# Create array to store averaged observables
 	xRav=np.zeros(iperiod)
 	xLav=np.zeros(iperiod)
+	xMav=np.zeros(iperiod)
 		
 	# Collect and average observables over nruns files
 	for i in range(0,nruns):
 		data=np.load(wdir+str(i)+".npz")
 		xR=data['xR']
 		xL=data['xL']
+		xM=data['xM']
 		xRav=xRav+xR
 		xLav=xLav+xL
+		xMav=xMav+xM
 		data.close()
 	
 	# Normalization	
-	A=max(xRav[0],xLav[0])
+	A=xRav[0]+xLav[0]+xMav[0]
 	xLav=xLav/A
 	xRav=xRav/A
+	xMav=xMav/A
 
 	# Save the data
-	np.savez(wdir+"averaged-data","w",  xL = xLav, xR=xRav,time=time)
+	np.savez(wdir+"averaged-data","w",  xL = xLav, xR=xRav, xM=xMav, time=time)
 
 if mode=="plot":
 	# This mode plot averaged observables
@@ -130,14 +137,16 @@ if mode=="plot":
 	time=data['time']
 	xL=data['xL']
 	xR=data['xR']
+	xM=data['xM']
 
 	# Plotting setup
 	ax=plt.gca()
-	ax.set_xlim(0,500.0)
+	ax.set_xlim(0,150.0)
 	ax.set_ylim(0,1.0)
 
 	# Plot
 	plt.plot(time,xL, c="red")
 	plt.plot(time,xR, c="blue")
+	plt.plot(time,xM, c="orange")
 	plt.show()
 

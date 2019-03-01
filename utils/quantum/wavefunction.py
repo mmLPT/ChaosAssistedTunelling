@@ -184,6 +184,13 @@ class WaveFunction:
 			if self.grid.x[i]<0.0:
 				xL=xL+abs(self.x[i])**2
 		return xL
+
+	def getxM(self,x1,x2):
+		xM=0.0
+		for i in range(0,self.grid.N):
+			if (self.grid.x[i]>x1 and self.grid.x[i]<x2):
+				xM=xM+abs(self.x[i])**2
+		return xM
 		
 	def getp2(self): 
 		# Get <psi|p^2|psi>
