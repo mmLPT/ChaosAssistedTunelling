@@ -13,10 +13,10 @@ def classical(pot,nperiod=100,ny0=20,wdir="classical/",compute=True):
 	# If compute, is true, then it generate, save and plot SPS for a 
 	# given MP potential. Otherwhise it simply plot SPS from wdir/
 	cp=ClassicalContinueTimePropagator(pot)
-	sb=StrobosopicPhaseSpaceMP(nperiod,ny0,cp,pot) #,pmax=np.pi)
+	sb=StrobosopicPhaseSpace(nperiod,ny0,cp) #,pmax=np.pi)
 	if compute:
 		sb.save(wdir)
-	sb.npz2plt(pot,wdir)
+	sb.npz2plt(wdir)
 	
 def propagate( grid, pot, iperiod, icheck,compute=True,read=True,wdir="",datafile="free-prop"):
 	# Propagate a wavefunction over one period/one kick/on length

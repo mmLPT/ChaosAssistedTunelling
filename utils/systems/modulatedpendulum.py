@@ -155,39 +155,10 @@ class H0(QuantumOperator):
 		wf.setState("loadp",psip=self.eigenvec[0].p*np.exp(-(1j/self.grid.h)*x0*self.grid.p))
 		return wf
 				
-class StrobosopicPhaseSpaceMP(StrobosopicPhaseSpace):
-	def __init__(self,nperiod,ny0,timepropagator,pot,xmax=2*np.pi,pmax=2*np.pi):
-		StrobosopicPhaseSpace.__init__(self,nperiod,ny0,timepropagator,xmax,pmax)
-		self.pot=pot
-			
-	#~ def sety0(self,i,j):
-		#~ dx=2*np.pi
-		#~ dp=3.0
-		#~ dp=2*np.pi
-		#~ x0=dx*(-0.5+float(i+0.5)/self.ny0)
-		#~ p0=dp*(-0.5+float(j+0.5)/self.ny0)
-		#~ self.y0=np.array([x0,p0])
-		#~ print(x0,p0)	
-		
-	def sety0(self,i,j):
-		dx=2*np.pi
-		dp=2*np.pi
-		x0=dx*(-0.5+float(i+0.5)/self.ny0)
-		if j==0:
-			p0=0.0
-		else:
-			p0=dp*(-0.5+float(j+0.5)/self.ny0)
-		self.y0=np.array([x0,p0])
-		print(x0,p0)	
-		
-	def npz2plt(self, potential, datadir="",double=False):
-		R1=potential.R1()
-		R2=potential.R2()
-		thetaR1=potential.thetaR1()
-		thetaR2=potential.thetaR2()
+#class StrobosopicPhaseSpaceMP(StrobosopicPhaseSpace):
 		#~ plt.scatter(R1*np.cos(thetaR1),0.5*R1*np.sin(thetaR1),s=3**2,marker="o",c="red")
 		#~ plt.scatter(R2*np.cos(thetaR2),0.5*R2*np.sin(thetaR2),s=3**2,marker="o",c="red")
 		#~ plt.scatter(R1*np.cos(thetaR1+np.pi),0.5*R1*np.sin(thetaR1+np.pi),s=3**2,marker="o",c="red")
 		#~ plt.scatter(R2*np.cos(thetaR2+np.pi),0.5*R2*np.sin(thetaR2+np.pi),s=3**2,marker="o",c="red")
-		StrobosopicPhaseSpace.npz2plt(self,datadir,double=double)
+
 

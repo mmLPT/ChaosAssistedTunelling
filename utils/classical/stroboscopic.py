@@ -23,6 +23,7 @@ class StrobosopicPhaseSpace:
 		# this fonciton computes strobsoocpic trajectory over nperiod 
 		# for a given initial state y0
 		y=self.generatey0(i)
+		print(i,y)
 		xs=np.zeros(self.nperiod)
 		ps=np.zeros(self.nperiod)
 		for k in range(0,self.nperiod):
@@ -38,7 +39,7 @@ class StrobosopicPhaseSpace:
 	def save(self,wdir=""):
 		for i in range(0,self.ny0):
 			for j in range(0,self.ny0):
-				xs,ps = self.getTrajectory(i)
+				xs,ps = self.getTrajectory(i*self.ny0+j)
 				np.savez(wdir+strint(i*self.ny0+j),"w", x=xs, p=ps)
 			
 	def npz2plt(self, wdir):
@@ -48,7 +49,7 @@ class StrobosopicPhaseSpace:
 		ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)
 		ax.set_aspect('equal')
 		for i in range(0,self.ny0**2-1):
-			data=np.load(wdir+str(i)+".npz")
+			data=np.load(wdir+strint(i)+".npz")
 			x=data["x"]
 			p=data["p"]
 			plt.scatter(x,p,s=01.0**2)
@@ -61,7 +62,7 @@ class StrobosopicPhaseSpace:
 		ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)
 		ax.set_aspect('equal')
 		for i in range(0,self.ny0**2-1):
-			data=np.load(wdir+str(i)+".npz")
+			data=np.load(wdir+strint(i)+".npz")
 			x=data["x"]
 			p=data["p"]
 			plt.scatter(x,p,s=01.0**2)

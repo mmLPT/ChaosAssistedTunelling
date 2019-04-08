@@ -49,7 +49,7 @@ grid=Grid(N,h)
 #~ x0=35.0/180.0*np.pi
 
 
-#~ modesbasic.classical(pot,nperiod=250,ny0=50,wdir="regular-tunneling/",compute=compute)
+modesbasic.classical(pot,nperiod=250,ny0=9,wdir=wdir,compute=compute)
 #~ modesbasic.propagate( grid, pot, compute=compute, read=read, iperiod=1000, icheck=1,wdir="quasimomentum/",datafile="blocked")
 #~ modesbasic.propagate( grid, pot, compute=compute, read=read, iperiod=100, icheck=1,wdir="test/",datafile="new")
 
@@ -65,7 +65,7 @@ grid=Grid(N,h)
 
 #~ modesquasimomentum.free_prop_averaged(grid,pot,x0,iperiod=50,ibetamax=125,wdir=wdir)
 #~ modesquasimomentum.free_prop_averaged(grid,pot,x0,compute=compute,read=read,iperiod=1000,ibetamax=100,wdir=wdir) 
-modesquasimomentum.free_prop_averaged(grid,pot,x0,Ndbeta=2.0,compute=compute,read=read,iperiod=100,ibetamax=50,wdir=wdir,beta0=0.0) 
+#~ modesquasimomentum.free_prop_averaged(grid,pot,x0,Ndbeta=2.0,compute=compute,read=read,iperiod=100,ibetamax=50,wdir=wdir,beta0=0.0) 
 
 #~ modesquasimomentum.distribution_omega(grid,pot,compute=compute,read=read,ibetamax=500,wdir="quasimomentum/",datafile="distribution4")
 #~ modesquasimomentum.distribution_omega(grid,pot,compute=compute,read=read,ibetamax=2500,wdir="quasimomentum/",datafile="scan",scan=True)
