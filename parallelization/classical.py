@@ -54,7 +54,7 @@ if mode=="compute":
 	# Create the potential, time propagator and stroboscopic phase space
 	pot=PotentialMP(e,gamma)
 	cp=ClassicalContinueTimePropagator(pot)
-	sb=StrobosopicPhaseSpace(iperiod,ny0,cp)
+	sb=StrobosopicPhaseSpace(iperiod,ny0,cp,pmax=0.5)
 
 	# Generate and save a trajectory
 	xs,ps = sb.getTrajectory(runid)
@@ -77,7 +77,7 @@ if mode=="plot":
 	ax.set_xlim(-np.pi,np.pi)
 	ax.set_ylim(-1.0,1.0)
 	ax.set_aspect('equal')
-	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.2f} \quad s={:.2f} \quad \nu={:.1f} kHz$".format(e,gamma,s,nu/1000.0))
+	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f}$".format(e,gamma))
 
 	# Plotting the SPS
 	for i in range(0,ny0):
@@ -86,5 +86,73 @@ if mode=="plot":
 		p=data["p"]
 		plt.scatter(x,p,s=01.0**2)
 	
+	h1=0.2/(2)
+	a=0.5*np.sqrt(h1)
+	b=2.5
+	x1=np.array([a,a,-a,-a,a])
+	y1=np.array([b-a,b+a,b+a,b-a,b-a])
+	#plt.plot(x1,y1)	
+
+	h1=0.45/(2)
+	a=0.5*np.sqrt(h1)
+	b=-2.5
+	x1=np.array([a,a,-a,-a,a])
+	y1=np.array([b-a,b+a,b+a,b-a,b-a])
+	#plt.plot(x1,y1)	
+
+	
 	# Export the SPS as .png
-	plt.savefig(wdir+"SPS.png")
+	plt.savefig(wdir+"SPS.png", bbox_inches = 'tight')
+
+if mode=="show":
+	#setLatex()
+	f = plt.figure(figsize=get_figsize(wf=1.0,hf=0.5))
+	ax = plt.gca()
+	# Loading inpute file
+	data=np.load(wdir+"params.npz")
+	e=data['e']
+	gamma=data['gamma']
+	h=data['h']	
+	iperiod=data['iperiod']
+	s=data['s']
+	nu=data['nu']
+	ny0=data['ny0']
+	data.close()
+	
+	# General plotting setup
+	ax.set_xlim(-np.pi,np.pi)
+	ax.set_ylim(-0.5*np.pi,0.5*np.pi)
+	ax.set_aspect('equal')
+	#ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f}$".format(e,gamma))
+	ax.set_xticks([-np.pi,-0.5*np.pi,0,0.5*np.pi,np.pi])
+	ax.set_xticklabels([r"$-\pi$",r"$-\pi/2$","$0$",r"$\pi/2$",r"$\pi$"])
+	ax.set_xlabel(r"$x$")
+	ax.set_yticks([-0.5*np.pi,0,0.5*np.pi])
+	ax.set_yticklabels([r"$-\pi/2$","$0$",r"$\pi/2$"])
+	ax.set_ylabel(r"$p$")
+
+	# Plotting the SPS
+	for i in range(0,ny0):
+		data=np.load(wdir+str(i)+".npz")
+		x=data["x"]
+		p=data["p"]
+		plt.scatter(x,p,s=01.0**2)
+	
+	h1=0.2/(2)
+	a=0.5*np.sqrt(h1)
+	b=2.5
+	x1=np.array([a,a,-a,-a,a])
+	y1=np.array([b-a,b+a,b+a,b-a,b-a])
+	#plt.plot(x1,y1)	
+
+	h1=0.45/(2)
+	a=0.5*np.sqrt(h1)
+	b=-2.5
+	x1=np.array([a,a,-a,-a,a])
+	y1=np.array([b-a,b+a,b+a,b-a,b-a])
+	#plt.plot(x1,y1)	
+
+	
+	# Export the SPS as .png
+	plt.savefig(wdir+"SPS.png", bbox_inches = 'tight')
+	#plt.show()

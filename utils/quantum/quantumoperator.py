@@ -158,7 +158,7 @@ class CATFloquetOperator(QuantumTimePropagator):
 		# Get the tunneling period
 		return 2*np.pi*self.h/(self.T0*(abs(self.diffqE1qE2(self.i1,self.i2))))
 		
-	def getQEsOverlapsSymmetry(self,n):
+	def getQEsOverlapsSymmetry(self,n,indexbool=False):
 		# Returns the n states with the largest projections on coherent states
 		qes=np.zeros(n)
 		projections=np.zeros(n)
@@ -168,11 +168,10 @@ class CATFloquetOperator(QuantumTimePropagator):
 			qes[i]=self.qE[ind[i]]
 			projections[i]=self.overlaps[ind[i]]
 			symX[i]=self.eigenvec[ind[i]].isSymetricInX()
-		return qes, projections, symX
-		
-	def get3Evec(self):
-		ind=np.flipud(np.argsort(self.overlaps))
-		return self.eigenvec[ind[0]],self.eigenvec[ind[1]],self.eigenvec[ind[2]]	
+		if not(indexbool):
+			return qes, projections, symX
+		else:
+			return qes, projections, symX,ind
 		
 	def getQE(self,i0):
 		# Returns either the quasi-energy of quasi-ground state or quasi-first excited state
@@ -181,13 +180,19 @@ class CATFloquetOperator(QuantumTimePropagator):
 		else:
 			i=self.i2
 		return self.qE[i]
+
+	def getEvec(self,i):
+		return self.eigenvec[i]
 		
-	def getEvec(self,i0):
+	def getEvec(self,i0,twolower=True):
 		# Same as getQE but returns the state instead of quasi energy
-		if i0==0:
-			i=self.i1
+		if twolower:
+			if i0==0:
+				i=self.i1
+			else:
+				i=self.i2
 		else:
-			i=self.i2
+			i=i0
 		return self.eigenvec[i]
 			
 	def getQETh(self,i0,pot):

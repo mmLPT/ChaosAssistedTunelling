@@ -41,7 +41,6 @@ if mode=="compute":
 	# Quasimomentum distribution
 	beta0=data['beta0'] # average
 	Ndbeta=data['Ndbeta'] # number of cell initially ocuppied by the true system
-	dbeta=data['dbeta'] # sigma^2 associated
 	
 	# Other
 	N=int(data['N']) # number of points for the grid
@@ -51,8 +50,6 @@ if mode=="compute":
 
 	# Adjust value of x0 + generate exprimental parameters
 	pot=PotentialMP(e,gamma)
-	if x0==0.0:
-		x0=pot.x0
 	s,nu,x0exp = convert2exp(gamma,h,x0)
 	
 	# Getting ID of the run
@@ -61,7 +58,7 @@ if mode=="compute":
 	# Saving read parameters
 	if runid==0:
 		nruns=int(sys.argv[4]) # total number of runs
-		np.savez(wdir+"params","w", description=description, nruns=nruns, e=e,gamma=gamma,h=h,N=N,x0=x0,s=s,nu=nu,x0exp=x0exp,beta0=beta0,dbeta=dbeta,Ndbeta=Ndbeta,iperiod=iperiod)
+		np.savez(wdir+"params","w", description=description, nruns=nruns, e=e,gamma=gamma,h=h,N=N,x0=x0,s=s,nu=nu,x0exp=x0exp,beta0=beta0,Ndbeta=Ndbeta,iperiod=iperiod)
 
 	# Create the grid
 	grid=Grid(N,h)
@@ -72,6 +69,7 @@ if mode=="compute":
 	xM=np.zeros(iperiod)
 	
 	# Generate quasimomentum value
+	dbeta=h/(3*Ndbeta)
 	beta=np.random.normal(beta0, dbeta)
         
 	# Create the Floquet operator
@@ -82,11 +80,14 @@ if mode=="compute":
 	wf.setState("coherent",x0=x0,xratio=2.0)
 
 	# Propagate the wavefunction over iperiods
-	xm=0.05*np.pi
+	#xm=0.5*np.pi
+	xm=0.2
+	xm=0.0
 	for i in range(0,iperiod):
 		xL[i]=wf.getxM(-np.pi,-xm)
-		xM[i]=wf.getxM(-xm,xm)
 		xR[i]=wf.getxM(xm,np.pi)
+		if xm > 0.0:
+			xM[i]=wf.getxM(-xm,xm)
 		fo.propagate(wf)
 	
 	# Save the observables
@@ -132,6 +133,19 @@ if mode=="average":
 if mode=="plot":
 	# This mode plot averaged observables
 
+	data=np.load(wdir+"params.npz")
+	e=data['e']
+	gamma=data['gamma']
+	h=data['h']
+	x0=data['x0']
+	s=data['s']
+	nu=data['nu']
+	x0exp=data['x0exp']
+	Ndbeta=data['Ndbeta']
+	beta0=data['beta0']/h
+	
+	data.close()
+
 	# Loading file
 	data=np.load(wdir+"averaged-data.npz")
 	time=data['time']
@@ -141,12 +155,14 @@ if mode=="plot":
 
 	# Plotting setup
 	ax=plt.gca()
-	ax.set_xlim(0,150.0)
+	ax.set_xlim(0,max(time))
 	ax.set_ylim(0,1.0)
 
 	# Plot
 	plt.plot(time,xL, c="red")
 	plt.plot(time,xR, c="blue")
 	plt.plot(time,xM, c="orange")
-	plt.show()
+
+	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f} \quad h={:.3f} \quad Ncells={:.0f} \quad x_0={:.1f} \quad \beta_0={:.2f}$".format(e,gamma,h,Ndbeta,x0,beta0)+"\n"+ r"$s={:.3f} \quad nu={:.2f} \ kHz \quad x_0={:.1f}$".format(s,nu/1000,x0exp))
+	plt.savefig(wdir+"freepop.png") # exporting figure as png
 

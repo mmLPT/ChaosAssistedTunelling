@@ -133,6 +133,8 @@ if mode=="plot":
 	ax.set_xlabel(r"h")
 	ax.set_ylabel(r"$qEs/h$")
 	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.2f}$".format(e,gamma))
+	ax.set_xlim(min(h),max(h))
+	ax.set_ylim(-1.0,3.0)
 
 	for irun in range(0,nruns):
 		# We want to rescale the overlap to 1 for each value of h
@@ -153,16 +155,17 @@ if mode=="plot":
 		# so that it goes from 0 to 1
 		rgbaSym = cmapSym(overlaps[irun,:]/Nsym)
 		rgbaAsym = cmapAsym(overlaps[irun,:]/Nasym)
-		print(irun)
+		#print(irun)
 
-		for istate in range(4,-1,-1):
+		for istate in range(3,-1,-1):
 			if symX[irun,istate]==True:
-				plt.scatter(h[irun],qEs[irun,istate]/h[irun],c=rgbaSym[istate],s=1.0**2)
+				plt.scatter(h[irun],2*np.pi*qEs[irun,istate]/h[irun],c=rgbaSym[istate],s=1.0**2)
+				plt.scatter(h[irun],2*np.pi*(qEs[irun,istate]/h[irun]+0.5),c=rgbaSym[istate],s=1.0**2)
 			else:
-				plt.scatter(h[irun],qEs[irun,istate]/h[irun],c=rgbaAsym[istate],s=1.0**2)
-	plt.show()
-	#plt.savefig(wdir+"spectrum.png") 
+				plt.scatter(h[irun],2*np.pi*qEs[irun,istate]/h[irun],c=rgbaAsym[istate],s=1.0**2)
+				plt.scatter(h[irun],2*np.pi*(qEs[irun,istate]/h[irun]+0.5),c=rgbaAsym[istate],s=1.0**2)
 
-
+	#plt.show()
+	plt.savefig(wdir+"spectrum.png") 
 	
 

@@ -30,7 +30,7 @@ def convert2theory(s,nu,x0exp=0.0):
 	nuL=(np.pi*hbar)/(m*d**2)*10**(11)
 	gamma=s*(nuL/nu)**2
 	heff=2*(nuL/nu)
-	x0=x0exp*np.pi/180
+	x0=x0exp*np.pi/90.0
 	if x0==0.0:
 		return gamma, heff
 	else:
@@ -44,5 +44,5 @@ def convert2exp(gamma,heff,x0=0.0):
 	nuL=(np.pi*hbar)/(m*d**2)*10**(11)
 	nu=2*(nuL/heff)
 	s=gamma/(nuL/nu)**2
-	x0exp=x0*180.0/np.pi
+	x0exp=x0*90.0/np.pi
 	return s, nu, x0exp
