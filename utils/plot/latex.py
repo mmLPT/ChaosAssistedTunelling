@@ -31,7 +31,7 @@ def setLatex():
 	mpl.rcParams['font.size'] = 10
 	mpl.rcParams['text.latex.unicode']=True
 	
-def saveLatex(datafile,notes=True):	
+def saveLatex(datafile,notes=True):
 	if notes:
 		#plt.savefig("/users/martinez/Desktop/These/notes/pictures/"+datafile+".pdf", format="pdf", bbox_inches='tight')
 		plt.savefig("/users/martinez/Desktop/These/notes/pictures/"+datafile+".png", bbox_inches='tight',dpi=1000)

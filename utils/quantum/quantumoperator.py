@@ -57,6 +57,9 @@ class QuantumOperator:
 		for i in index:
 			husimi.save(self.eigenvec[i],wdir+strint(i),title=str(np.angle(self.eigenval[i])))
 			self.eigenvec[i].save(wdir+string(i))
+
+	def getEvec(self,i):
+		return self.eigenvec[i]
 				
 class QuantumTimePropagator(QuantumOperator):
 	# Class to be used to described time evolution operators such has
@@ -93,7 +96,8 @@ class QuantumTimePropagator(QuantumOperator):
 				for idt in range(0,self.idtmax): 
 					self.Ux[idt]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x,idt*self.dt))*self.dt)
 			else:
-				self.Ux[0]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x))*self.dt)
+				for idt in range(0,self.idtmax):
+					self.Ux[idt]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x))*self.dt)
 				
 			self.propagate=self.propagatenoGP	
 			
@@ -180,9 +184,6 @@ class CATFloquetOperator(QuantumTimePropagator):
 		else:
 			i=self.i2
 		return self.qE[i]
-
-	def getEvec(self,i):
-		return self.eigenvec[i]
 		
 	def getEvec(self,i0,twolower=True):
 		# Same as getQE but returns the state instead of quasi energy

@@ -170,6 +170,10 @@ class WaveFunction:
 	def getx(self): 
 		# Get <psi|x|psi>
 		return sum(self.grid.x*abs(self.x)**2*self.grid.intweight)
+
+	def getMomentum(self,q):
+		# Get sum |<psi|psi>|^2q
+		return sum(abs(self.x)**(2*q)*self.grid.intweight)
 		
 	def getxR(self):
 		xR=0.0
@@ -210,12 +214,12 @@ class WaveFunction:
 		plt.savefig(datafile+".png", bbox_inches='tight',dpi=1000)
 		plt.clf()
 		
-	def savePNGx(self,datafile,maxx0=0.1):
+	def savePNGx(self,datafile,maxx0=1.0):
 		ax = plt.gca()
 		x0=max(self.grid.x)
-		psix2=abs(self.x)**2
-		ax.set_xlim(-x0/2.0,x0/2.0)
-		ax.set_ylim(0.0,maxx0)
+		psix2=abs(self.x)**2*self.grid.intweight
+		ax.set_xlim(-x0,x0)
+		#ax.set_ylim(0.0,1.0)
 		plt.plot(self.grid.x,psix2)
-		plt.savefig(datafile+".png", bbox_inches='tight',dpi=1000)
+		plt.savefig(datafile+".png", bbox_inches='tight')
 		plt.clf()

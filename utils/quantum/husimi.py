@@ -72,8 +72,6 @@ class Husimi:
 			self.npz2png(datafile, title=title)
 		
 	def npz2png(self, datafile, title=""):
-		# Converts an .npz file to .png file
-		setLatex()
 		# Get data from .npz file
 		data=np.load(datafile+".npz")
 		rho=data["rho"]
@@ -89,13 +87,6 @@ class Husimi:
 		ax.set_ylim(-np.pi,np.pi)
 		ax.set_xlim(-self.grid.xmax/2.0,self.grid.xmax/2.0)
 		ax.set_aspect('equal')
-		"""
-		ax.set_xticks([-pi, -pi/2.0,0, pi/2.0, pi])
-		ax.set_xticklabels([r"$-\pi$",r"$-\frac{\pi}{2}$","$0$", r"$\frac{\pi}{2}$",r"$\pi$"])
-		ax.set_yticks([-np.pi, -np.pi/2.0,0, np.pi/2.0, np.pi])
-		ax.set_yticklabels([r"$-\pi$",r"$-\frac{\pi}{2}$","$0$", r"$\frac{\pi}{2}$",r"$\pi$"])
-		"""
-		
 		
 		# 2D map options
 		levels = MaxNLocator(nbins=150).tick_values(0.0,1.0)	
