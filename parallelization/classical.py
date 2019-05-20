@@ -8,6 +8,7 @@ from utils.classical import *
 from utils.systems.modulatedpendulum import *
 from utils.systems.general import *
 from utils.toolsbox import *
+from utils.plot import *
 
 # State: stable [22/02/2019]
 
@@ -103,6 +104,7 @@ if mode=="plot":
 	
 	# Export the SPS as .png
 	plt.savefig(wdir+"SPS.png", bbox_inches = 'tight')
+	#saveLatex(wdir+"SPS.png")
 
 if mode=="show":
 	#setLatex()
@@ -154,5 +156,5 @@ if mode=="show":
 
 	
 	# Export the SPS as .png
-	plt.savefig(wdir+"SPS.png", bbox_inches = 'tight')
-	#plt.show()
+	#plt.savefig(wdir+"SPS.png", bbox_inches = 'tight')
+	plt.show()

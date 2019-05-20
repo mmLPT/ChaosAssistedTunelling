@@ -67,6 +67,7 @@ if mode=="compute":
 	xR=np.zeros(iperiod)
 	xL=np.zeros(iperiod)
 	xM=np.zeros(iperiod)
+	xexp=np.zeros(iperiod)
 	
 	# Generate quasimomentum value
 	dbeta=h/(3*Ndbeta)
@@ -81,17 +82,19 @@ if mode=="compute":
 
 	# Propagate the wavefunction over iperiods
 	#xm=0.5*np.pi
-	xm=0.2
+	#xm=0.2
 	xm=0.0
 	for i in range(0,iperiod):
 		xL[i]=wf.getxM(-np.pi,-xm)
 		xR[i]=wf.getxM(xm,np.pi)
 		if xm > 0.0:
 			xM[i]=wf.getxM(-xm,xm)
+		xexp[i]=wf.getx()
 		fo.propagate(wf)
+
 	
 	# Save the observables
-	np.savez(wdir+str(runid),"w", beta=beta, xL = xL, xR=xR, xM=xM)
+	np.savez(wdir+str(runid),"w", beta=beta, xL = xL, xR=xR, xM=xM,xexp=xexp)
 
 
 if mode=="average":
@@ -109,6 +112,7 @@ if mode=="average":
 	xRav=np.zeros(iperiod)
 	xLav=np.zeros(iperiod)
 	xMav=np.zeros(iperiod)
+	xexpav=np.zeros(iperiod)
 		
 	# Collect and average observables over nruns files
 	for i in range(0,nruns):
@@ -116,9 +120,11 @@ if mode=="average":
 		xR=data['xR']
 		xL=data['xL']
 		xM=data['xM']
+		xexp=data['xexp']
 		xRav=xRav+xR
 		xLav=xLav+xL
 		xMav=xMav+xM
+		xexpav=xexpav+xexp
 		data.close()
 	
 	# Normalization	
@@ -126,9 +132,10 @@ if mode=="average":
 	xLav=xLav/A
 	xRav=xRav/A
 	xMav=xMav/A
+	xexpav=xexpav/nruns
 
 	# Save the data
-	np.savez(wdir+"averaged-data","w",  xL = xLav, xR=xRav, xM=xMav, time=time)
+	np.savez(wdir+"averaged-data","w",  xL = xLav, xR=xRav, xM=xMav, xexp=xexpav, time=time)
 
 if mode=="plot":
 	# This mode plot averaged observables
@@ -152,6 +159,7 @@ if mode=="plot":
 	xL=data['xL']
 	xR=data['xR']
 	xM=data['xM']
+	xexp=data['xexp']
 
 	# Plotting setup
 	ax=plt.gca()
@@ -165,4 +173,15 @@ if mode=="plot":
 
 	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f} \quad h={:.3f} \quad Ncells={:.0f} \quad x_0={:.1f} \quad \beta_0={:.2f}$".format(e,gamma,h,Ndbeta,x0,beta0)+"\n"+ r"$s={:.3f} \quad nu={:.2f} \ kHz \quad x_0={:.1f}$".format(s,nu/1000,x0exp))
 	plt.savefig(wdir+"freepop.png") # exporting figure as png
+
+	ax.clear()
+
+	ax=plt.gca()
+	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f} \quad h={:.3f} \quad Ncells={:.0f} \quad x_0={:.1f} \quad \beta_0={:.2f}$".format(e,gamma,h,Ndbeta,x0,beta0)+"\n"+ r"$s={:.3f} \quad nu={:.2f} \ kHz \quad x_0={:.1f}$".format(s,nu/1000,x0exp))
+	ax.set_xlim(0,max(time))
+	ax.set_ylim(-np.pi/2.0,np.pi/2.0)
+
+	# Plot
+	plt.plot(time,xexp)
+	plt.savefig(wdir+"freepop2.png")
 
