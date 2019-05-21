@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH -J chbd
+#SBATCH -N 5
+#SBATCH -n 180
+#SBATCH --ntasks-per-core=1
+#SBATCH --ntasks-per-node=36
+#SBATCH --time=00:10:00
+#SBATCH --job-name="SPECTRUM"
+
+
+module purge
+module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
+ulimit -s 10240
+
+nruns=180
+name=e015-g050
+wdir=/tmpdir/p0110mm/$name-spectrum-${SLURM_JOB_ID}
+inputfile=input/$name
+
+srun chdb --in-type "0 $nruns" --report "$wdir/report.txt" --out-dir $wdir --command "python3 spectrum.py compute $wdir/ $inputfile $nruns %path%"
+python3 spectrum.py gather $wdir/
