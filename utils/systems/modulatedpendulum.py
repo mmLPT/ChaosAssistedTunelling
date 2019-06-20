@@ -13,10 +13,10 @@ from utils.toolsbox import *
 # This script contains:  4 classes and 4 functions
 
 class PotentialMP(Potential):
-	def __init__(self,e,gamma,f=np.cos):
+	def __init__(self,e,gamma,f=np.cos,idtmax=1000):
 		Potential.__init__(self)
 		self.T0=4*np.pi
-		self.idtmax=1000
+		self.idtmax=idtmax
 		
 		self.e=e
 		self.gamma=gamma
@@ -28,9 +28,8 @@ class PotentialMP(Potential):
 			self.d1=0.0
 			self.x0=1.25
 		else:
-			self.d1=(self.gamma-0.25)/(self.e*self.gamma)
+			self.d1=0.0#(self.gamma-0.25)/(self.e*self.gamma)
 			self.x0=self.R1()
-		self.isTimeDependent=True
 		
 	def Vx(self,x,t=np.pi/2.0):
 		return -self.gamma*(1+self.e*self.f(t))*np.cos(x)
@@ -91,41 +90,15 @@ class PotentialMPasym(PotentialMP):
 		# Returns <wf1|Vxasym|wf2>
 		return sum(np.conj(wf1.x)*self.Vxasym(wf1.grid.x)*wf2.x)
 		
-class PotentialMPasymGP(PotentialMP):
+class PotentialMPGPE(PotentialMP):
 	# Longitudinal confinment + GP
-	def __init__(self,e,gamma,h):
-		PotentialMP.__init__(self,e,gamma)
-		self.omega2=(getomegax(h))**2
+	def __init__(self,e,gamma,g,idtmax=1000):
+		PotentialMP.__init__(self,e,gamma,idtmax=idtmax)
 		self.isGP=True
-		self.g=getg(h)
+		self.g=g
 		
 	def Vx(self,x,wfx,t=np.pi/2.0):
-		return PotentialMP.Vx(self,x,t)+PotentialMP.VGP(self,wfx)+0.5*self.omega2*x**2
-		
-class PotentialMPloading(Potential):
-	# Longitudinal confinment + GP + modulation off + gamma(t)
-	# This micmics the loading of the optical lattice in experiments
-	def __init__(self,e,gammaf,h):
-		Potential.__init__(self)
-		self.omega2=(getomegax(h))**2
-		
-		self.T0=50000
-		self.idtmax=int(self.T0*10)
-		print(self.idtmax)
-		
-		self.isGP=True
-		self.g=getg(h)
-		
-		self.isTimeDependent=True
-
-		self.gammaf=gammaf
-		self.alphaloading=self.gammaf/self.T0
-	
-	def gamma(self,t):
-		return self.alphaloading*t
-		
-	def Vx(self,x,wfx,t):
-		return -self.gamma(t)*np.cos(x)+PotentialMP.VGP(self,wfx)+0.5*self.omega2*x**2
+		return PotentialMP.Vx(self,x,t) +self.g*np.abs(wfx)**2
 
 class H0(QuantumOperator):
 	# Hamiltonian for unmodulated pendulum. The matric p representation
@@ -154,11 +127,4 @@ class H0(QuantumOperator):
 		wf=WaveFunction(self.grid)
 		wf.setState("loadp",psip=self.eigenvec[0].p*np.exp(-(1j/self.grid.h)*x0*self.grid.p))
 		return wf
-				
-#class StrobosopicPhaseSpaceMP(StrobosopicPhaseSpace):
-		#~ plt.scatter(R1*np.cos(thetaR1),0.5*R1*np.sin(thetaR1),s=3**2,marker="o",c="red")
-		#~ plt.scatter(R2*np.cos(thetaR2),0.5*R2*np.sin(thetaR2),s=3**2,marker="o",c="red")
-		#~ plt.scatter(R1*np.cos(thetaR1+np.pi),0.5*R1*np.sin(thetaR1+np.pi),s=3**2,marker="o",c="red")
-		#~ plt.scatter(R2*np.cos(thetaR2+np.pi),0.5*R2*np.sin(thetaR2+np.pi),s=3**2,marker="o",c="red")
-
 

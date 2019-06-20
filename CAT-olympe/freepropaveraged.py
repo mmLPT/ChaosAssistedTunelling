@@ -1,4 +1,5 @@
 import sys
+import os
 sys.path.insert(0, '..')
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,6 +24,11 @@ from utils.systems.modulatedpendulum import *
  
 mode=sys.argv[1] # mode selected
 wdir=sys.argv[2] # working (=output) directory
+
+if mode=="initialize":
+	os.mkdir(wdir)
+	os.mkdir(wdir+"data")
+
 
 if mode=="compute":
 	# Compute a single free propagation for a given value of quasimomentum
@@ -53,11 +59,12 @@ if mode=="compute":
 	s,nu,x0exp = convert2exp(gamma,h,x0)
 	
 	# Getting ID of the run
-	runid=int(sys.argv[5])-1
+	nruns=int(sys.argv[4])+1
+	runid=int(sys.argv[5])
 
 	# Saving read parameters
 	if runid==0:
-		nruns=int(sys.argv[4]) # total number of runs
+		 # total number of runs
 		np.savez(wdir+"params","w", description=description, nruns=nruns, e=e,gamma=gamma,h=h,N=N,x0=x0,s=s,nu=nu,x0exp=x0exp,beta0=beta0,Ndbeta=Ndbeta,iperiod=iperiod)
 
 	# Create the grid
@@ -94,7 +101,7 @@ if mode=="compute":
 
 	
 	# Save the observables
-	np.savez(wdir+str(runid),"w", beta=beta, xL = xL, xR=xR, xM=xM,xexp=xexp)
+	np.savez(wdir+"data/"+str(runid),"w", beta=beta, xL = xL, xR=xR, xM=xM,xexp=xexp)
 
 
 if mode=="average":
@@ -116,7 +123,7 @@ if mode=="average":
 		
 	# Collect and average observables over nruns files
 	for i in range(0,nruns):
-		data=np.load(wdir+str(i)+".npz")
+		data=np.load(wdir+"data/"+str(i)+".npz")
 		xR=data['xR']
 		xL=data['xL']
 		xM=data['xM']

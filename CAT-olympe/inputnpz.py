@@ -3,39 +3,40 @@ sys.path.insert(0, '..')
 import numpy as np
 from utils.toolsbox import *
 
-inputfile="input/regu-new"
+inputfile="input/e_0d15-g_0d25"
 
 # general information
 N=64
-description=""
+description="interactions"
 
 # potential parameters
-#x0=0.5
-#gamma=0.250
-#h=0.4
 e=0.15
-s=3.87
-nu=31.21*10**3
-x0exp=15.0
-gamma, h,x0 = convert2theory(s=s, nu=nu,x0exp=x0exp)
-#gamma, h = convert2theory(s=s, nu=nu)
+gamma=0.25
+h=0.4
+x0=0.8
+s=9.75
+nu=52.68*10**3
+x0exp=28.6
+#gamma, h, x0 = convert2theory(s=s, nu=nu,x0exp=x0exp)
 
 # quasi-momentum
 beta0=0.0*h
-Ndbeta=6.0
+Ndbeta=3.0
 
 # spectrum
-hmin=0.25
-hmax=0.35
 nstates=4
 
 # explore
+hmin=0.4
+hmax=0.7
 emin=0.42
 emax=0.44
-gammamin=0.25
-gammamax=0.30
+gammamin=0.26
+gammamax=0.32
+gmin=0.0
+gmax=1.0
 
 # free propagation/classical
-iperiod=40
+iperiod=3000
 
-np.savez(inputfile,"w", description=description, N=N, e=e, gamma=gamma, h=h, x0=x0, beta0=beta0, Ndbeta=Ndbeta, iperiod=iperiod,hmin=hmin,hmax=hmax,nstates=nstates,emin=emin,emax=emax,gammamin=gammamin,gammamax=gammamax)
+np.savez(inputfile,"w", description=description, N=N, e=e, gamma=gamma, h=h, x0=x0, beta0=beta0, Ndbeta=Ndbeta, iperiod=iperiod,hmin=hmin,hmax=hmax,nstates=nstates,emin=emin,emax=emax,gammamin=gammamin,gammamax=gammamax,gmin=gmin,gmax=gmax)

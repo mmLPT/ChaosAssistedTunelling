@@ -12,8 +12,8 @@ module purge
 module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
-nruns=180
-name=e015-g050
+nruns=720
+name=3level
 wdir=/tmpdir/p0110mm/$name-spectrum-${SLURM_JOB_ID}
 inputfile=input/$name
 

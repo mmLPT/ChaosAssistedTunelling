@@ -45,7 +45,7 @@ class WaveFunction:
 	def grid(self, value):
 		self._grid = value	
 	
-	def setState(self, state,x0=0.0,i0=0,psix=0,psip=0,xratio=1.0,datafile=""): 
+	def setState(self, state,x0=0.0,i0=0,psix=0,psip=0,xratio=1.0,datafile="",norm=True): 
 		# Commons physical states are implemented
 		if state=="coherent":
 			# This gives a coherent state occupying a circled area in x/p 
@@ -60,11 +60,13 @@ class WaveFunction:
 			# Set <x|psi> = delta(x-x[i0])
 			self.x=np.zeros(self.grid.N)
 			self.x[i0]=1.0
+			if norm:
+				self.normalizeX()
 			self.x2p()
 			
 		elif state=="diracp":
 			# Set <p|psi> = delta(p-p[i0])
-			self.p=np.zeros(grid.N,dtype=np.complex_)
+			self.p=np.zeros(self.grid.N,dtype=np.complex_)
 			self.p[i0]=1.0
 			self.p=self.p*self.grid.phaseshift
 			self.p2x()
@@ -88,7 +90,7 @@ class WaveFunction:
 	def normalizeX(self):
 		# Normalize <x|psi>
 		# /!\ don't forget the discretization
-		nrm=abs(sum(np.conj(self.x)*self.x))*self.grid.intweight
+		nrm=sum(abs(self.x)**2)*self.grid.ddx
 		self.x = self.x/np.sqrt(nrm)
 		
 	def shiftX(self,x0):
@@ -104,11 +106,11 @@ class WaveFunction:
 	# === Switching representation x <-> p =============================
 	def p2x(self):
 		# <p|psi> -> <x|psi>
-		self.x=np.fft.ifft(self.p,norm="ortho")
+		self.x=np.fft.ifft(self.p)*self.grid.N
 		
 	def x2p(self):
 		# <x|psi> -> <p|psi>
-		self.p=np.fft.fft(self.x,norm="ortho") 
+		self.p=np.fft.fft(self.x)/self.grid.N
 	
 	# === Operations on wave function ==================================
 	def __add__(self,other): 
@@ -151,29 +153,32 @@ class WaveFunction:
 	
 	def __mod__(self,other): 
 		# wf1%wf2 <-> <wf1|wf2>
-		return sum(np.conj(self.x)*other.x)*self.grid.intweight
+		return sum(np.conj(self.x)*other.x)*self.grid.ddx
 		
 	def __floordiv__(self,other): 
 		# wf1//wf2 <-> |<wf1|wf2>|^2
-		return abs(sum(np.conj(self.x)*other.x)*self.grid.intweight)**2
+		return abs(sum(np.conj(self.x)*other.x)*self.grid.ddx)**2
 		
 	# === I/O ==========================================================
 	def isSymetricInX(self,sigma=0.01):
 		
 		psix=np.flipud(self.x)-self.x
 
-		if  sum(np.conj(psix)*psix)*self.grid.intweight < sigma:
+		if  sum(np.conj(psix)*psix)*self.grid.ddx < sigma:
 			return True
 		else:
 			return False
 	
 	def getx(self): 
 		# Get <psi|x|psi>
-		return sum(self.grid.x*abs(self.x)**2*self.grid.intweight)
+		return sum(self.grid.x*abs(self.x)**2*self.grid.ddx)
 
-	def getMomentum(self,q):
+	def getMomentum(self,xp,q):
 		# Get sum |<psi|psi>|^2q
-		return sum(abs(self.x)**(2*q)*self.grid.intweight)
+		if xp=="x":
+			return sum(abs(self.x)**(2*q)*self.grid.ddx)
+		if xp=="p":
+			return sum(abs(self.p)**(2*q)*self.grid.ddp)
 		
 	def getxR(self):
 		xR=0.0
@@ -195,10 +200,6 @@ class WaveFunction:
 			if (self.grid.x[i]>x1 and self.grid.x[i]<x2):
 				xM=xM+abs(self.x[i])**2
 		return xM
-		
-	def getp2(self): 
-		# Get <psi|p^2|psi>
-		return sum(self.grid.p**2*abs(self.p)**2*self.grid.intweight)
 	
 	def save(self,datafile):
 		# Export both x/p representation in 'datafile.npz'
@@ -214,11 +215,12 @@ class WaveFunction:
 		plt.savefig(datafile+".png", bbox_inches='tight',dpi=1000)
 		plt.clf()
 		
-	def savePNGx(self,datafile,maxx0=1.0):
+	def savePNGx(self,datafile):
 		ax = plt.gca()
 		x0=max(self.grid.x)
-		psix2=abs(self.x)**2*self.grid.intweight
+		psix2=abs(self.x)**2*self.grid.ddx
 		ax.set_xlim(-x0,x0)
+		ax.set_ylim(0.0,0.1)
 		#ax.set_ylim(0.0,1.0)
 		plt.plot(self.grid.x,psix2)
 		plt.savefig(datafile+".png", bbox_inches='tight')

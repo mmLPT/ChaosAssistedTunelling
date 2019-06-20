@@ -2,6 +2,7 @@ import numpy as np
 
 from utils.quantum.grid import *
 from utils.quantum.wavefunction import *
+from numpy.linalg import matrix_power
 
 # This script contains: 3 classes
 # + class : QuantumOperator
@@ -60,6 +61,17 @@ class QuantumOperator:
 
 	def getEvec(self,i):
 		return self.eigenvec[i]
+		
+	def getEval(self,i):
+		return self.eigenval[i]
+		
+	@property
+	def M(self):
+		return self._M
+		
+	@M.setter
+	def M(self, value):
+		self._M = value
 				
 class QuantumTimePropagator(QuantumOperator):
 	# Class to be used to described time evolution operators such has
@@ -71,37 +83,36 @@ class QuantumTimePropagator(QuantumOperator):
 	# - periodic kicked system V(x,t)
 	# - non linear GP V(x,wfx,t)
 
-	def __init__(self,grid,potential,beta=0.0):
+	def __init__(self,grid,potential,beta=0.0,mu=1.0,randomphase=False):
 		QuantumOperator.__init__(self,grid)
 		self.hermitian=False
 		
 		self.potential=potential
 		self.T0=potential.T0 # Length of propagation
-		self.idtmax=potential.idtmax 
-		self.dt=self.T0/self.idtmax
+		self.idtmax=potential.idtmax # number of step : 1 -> kicked/ =/=1 -> periodic or time independent
+		self.dt=self.T0/self.idtmax # time step
 		self.beta=beta # quasi-momentum
-		
+		self.mu=mu # 'mass'
 		
 		# In order to gain time in propagation, we pre-compute 
 		# splitted propagator that appears to be constant most of time
 		# NB: if you have non interactions terms, this doesn't work
 		self.Up=np.zeros(self.N,dtype=np.complex_)
-		self.Up=np.exp(-(1j/grid.h)*((grid.p-self.beta)**2/4)*self.dt)
-		
-		if self.potential.isGP==True:
-			self.propagate=self.propagateGP
+		if randomphase:
+			self.Up=np.exp(-1j*(np.random.rand(self.N)*2*np.pi)/2.0*self.dt)
 		else:
-			self.Ux=np.zeros((self.idtmax,self.N),dtype=np.complex_)
-			if self.potential.isTimeDependent==True:
-				for idt in range(0,self.idtmax): 
-					self.Ux[idt]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x,idt*self.dt))*self.dt)
-			else:
-				for idt in range(0,self.idtmax):
-					self.Ux[idt]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x))*self.dt)
-				
-			self.propagate=self.propagatenoGP	
+			self.Up=np.exp(-(1j/grid.h)*((grid.p-self.beta)**2/(self.mu*4))*self.dt)
+		
+
+		self.Ux=np.zeros((self.idtmax,self.N),dtype=np.complex_)
+		if self.idtmax==1:
+			for idt in range(0,self.idtmax):
+				self.Ux[idt]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x))*self.dt)
+		else:
+			for idt in range(0,self.idtmax): 
+				self.Ux[idt]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x,idt*self.dt))*self.dt)
 			
-	def propagatenoGP(self,wf):
+	def propagate(self,wf):
 		# Propagate over one period/kick/arbitray time 
 		for idt in range(0,self.idtmax):
 			wf.p=wf.p*self.Up 
@@ -110,14 +121,12 @@ class QuantumTimePropagator(QuantumOperator):
 			wf.x2p() 
 			wf.p=wf.p*self.Up  
 			
-	def propagateGP(self,wf):
+	def propagateGP(self,wf,g):
 		# Propagate over one period/kick/arbitray time with interactions
 		for idt in range(0,self.idtmax):
-			if idt%100==0:
-				print(idt)
 			wf.p=wf.p*self.Up 
 			wf.p2x() 
-			wf.x=wf.x*np.exp(-(1j/self.grid.h)*(self.potential.Vx(self.grid.x,np.conj(wf.x)*wf.x,idt*self.dt))*self.dt)
+			wf.x=wf.x*self.Ux[idt]*np.exp(-(1j/self.grid.h)*(g*np.abs(wf.x)**2)*self.dt)
 			wf.x2p() 
 			wf.p=wf.p*self.Up  
 			
@@ -127,7 +136,7 @@ class QuantumTimePropagator(QuantumOperator):
 		self.Mrepresentation="x"
 		for i in range(0,self.N):
 			wf=WaveFunction(self.grid)
-			wf.setState("diracx",i0=i) 
+			wf.setState("diracx",i0=i,norm=False) #Norm false to produce 'normalized' eigevalue
 			self.propagate(wf)
 			wf.p2x()
 			self.M[:,i]=wf.x 
@@ -135,66 +144,44 @@ class QuantumTimePropagator(QuantumOperator):
 class CATFloquetOperator(QuantumTimePropagator):
 	# This class is specific for CAT purpose:
 	# WIP: a bit dirty.
-	def __init__(self,grid,potential,beta=0.0):
-		QuantumTimePropagator.__init__(self,grid,potential,beta=beta)
-		self.overlaps=np.zeros(grid.N)
+	def __init__(self,grid,potential,beta=0.0,randomphase=False):
+		QuantumTimePropagator.__init__(self,grid,potential,beta=beta,randomphase=randomphase)
 		self.qE=np.zeros(grid.N) # quasi energies
-		self.i1=0 #quasi ground state
-		self.i2=0 # quasi first excited state
-	
-	def computeOverlapsAndQEs(self,wf):
-		# Find the two states that tunnels given a wavefunction
 		
-		# Check the overlap with the given wave function
+	def diagonalize(self):
+		# Diagonalize, then compute quasi-energies
+		QuantumOperator.diagonalize(self)
 		for i in range(0,self.N):
-			self.overlaps[i]=self.eigenvec[i]//wf
-			self.qE[i]=-np.angle(self.eigenval[i])*(self.h/self.T0)
-			
-	def getTunnelingPeriod(self):
-		
-		# Find the two states that tunnels
-		self.i1=np.argmax(self.overlaps)
-		proj1=self.overlaps[self.i1]
-		self.overlaps[self.i1]=0.0
-		self.i2=np.argmax(self.overlaps)
-		self.overlaps[self.i1]=proj1
-		
-		# Get the tunneling period
-		return 2*np.pi*self.h/(self.T0*(abs(self.diffqE1qE2(self.i1,self.i2))))
-		
-	def getQEsOverlapsSymmetry(self,n,indexbool=False):
-		# Returns the n states with the largest projections on coherent states
-		qes=np.zeros(n)
-		projections=np.zeros(n)
-		symX=np.zeros(n)
-		ind=np.flipud(np.argsort(self.overlaps))
-		for i in range(0,n):
-			qes[i]=self.qE[ind[i]]
-			projections[i]=self.overlaps[ind[i]]
-			symX[i]=self.eigenvec[ind[i]].isSymetricInX()
-		if not(indexbool):
-			return qes, projections, symX
+			self.qE[i]=-np.angle(self.eigenval[i])*(self.h/self.T0)	
+	
+	def getOrderedOverlapsWith(self,wf,twolvlonly=False):
+		# Check overlaps with a given wave function
+		# Returns the index of ordered overlaps and the overlaps
+		overlaps=np.zeros(self.N,dtype=complex)
+		for i in range(0,self.N):
+			overlaps[i]=self.eigenvec[i]%wf
+		if twolvlonly==True:
+			i1=np.argmax(self.overlaps)
+			proj1=overlaps[i1]
+			overlaps[i1]=0.0
+			i2=np.argmax(self.overlaps)
+			return i1,i2,proj1,proj2
 		else:
-			return qes, projections, symX,ind
+			ind=np.flipud(np.argsort(np.abs(overlaps)**2))
+			orderedOverlaps=np.zeros(self.N,dtype=complex)
+			for i in range(0,self.N):
+				orderedOverlaps[i]=overlaps[ind[i]]
+			return ind, orderedOverlaps
+			
+	def getTunnelingPeriodBetween(self,i1,i2):		
+		return 2*np.pi*self.h/(self.T0*(abs(self.diffqE1qE2(i1,i2))))
+		
+	def getTunnelingFrequencyBetween(self,i1,i2):		
+		return np.abs(self.diffqE1qE2(i1,i2))/self.h
 		
 	def getQE(self,i0):
 		# Returns either the quasi-energy of quasi-ground state or quasi-first excited state
-		if i0==0:
-			i=self.i1
-		else:
-			i=self.i2
-		return self.qE[i]
-		
-	def getEvec(self,i0,twolower=True):
-		# Same as getQE but returns the state instead of quasi energy
-		if twolower:
-			if i0==0:
-				i=self.i1
-			else:
-				i=self.i2
-		else:
-			i=i0
-		return self.eigenvec[i]
+		return self.qE[i0]
 			
 	def getQETh(self,i0,pot):
 		# Returns expected value of quasi-energies according to 
@@ -234,58 +221,74 @@ class CATFloquetOperator(QuantumTimePropagator):
 			return diff+2*dE
 		else:
 			return diff
+			
+	def getSpacingDistribution(self):
+		ind=np.argsort(self.qE)
+		# On suppose Nh=2pi et T=2pi do we
+		s=np.zeros(self.N)
+		for i in range(0,self.N-1):
+			s[i]=np.abs(self.diffqE1qE2(ind[i],ind[i+1]))/(2*np.pi*self.h/(self.N*self.T0))
+		s[self.N-1]=np.abs(self.diffqE1qE2(ind[self.N-1],ind[0]))/(2*np.pi*self.h/(self.N*self.T0))
+		return s
 		
-class QuantumImaginaryTimePropagator(QuantumOperator):
-	# This class is used to find the ground state of a given potential
-	# Note that is mean to be used for GP + no time dependent potential
+	def getFormFactor(self,it):
+		n=int(it*self.N)
+		return abs(sum(self.eigenval**n))**2/self.N			
+		
+# Work In Progress # ------------------------------------------------- #
+
+# ~ class QuantumImaginaryTimePropagator(QuantumOperator):
+	# ~ # This class is used to find the ground state of a given potential
+	# ~ # Note that is mean to be used for GP + no time dependent potential
 	
-	def __init__(self,grid,potential,idtmax):
-		self.potential=potential
-		self.grid=grid
+	# ~ def __init__(self,grid,potential,idtmax):
+		# ~ self.potential=potential
+		# ~ self.grid=grid
 		
-		self.T0=potential.T0 
-		self.idtmax=idtmax 
-		self.dt=self.T0/self.idtmax
+		# ~ self.T0=potential.T0 
+		# ~ self.idtmax=idtmax 
+		# ~ self.dt=self.T0/self.idtmax
 		
-		self.Up=np.zeros(grid.N,dtype=np.complex_)
-		self.Up=np.exp(-(self.dt/self.grid.h)*(grid.p**2/2))
+		# ~ self.Up=np.zeros(grid.N,dtype=np.complex_)
+		# ~ self.Up=np.exp(-(self.dt/self.grid.h)*(grid.p**2/2))
 		
-		self.muerrorref=1.0e-14
+		# ~ self.muerrorref=1.0e-14
 		
-	def Ux(self, wfx):
-		# Split step x propagator
-		return np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x,wfx))/2.0)
+	# ~ def Ux(self, wfx):
+		# ~ # Split step x propagator
+		# ~ return np.exp(-(self.dt/self.grid.h)*(self.potential.Vx(self.grid.x,wfx))/2.0)
 		
-	def getGroundState(self,wf):
-		# Initialization
-		wf0x=wf.x
-		mu=1.0
-		i=0
+	# ~ def getGroundState(self,wf):
+		# ~ # Initialization
+		# ~ wf0x=wf.x
+		# ~ mu=1.0
+		# ~ i=0
 	
-		# Propagation
-		while mu > self.muerrorref:
+		# ~ # Propagation
+		# ~ while mu > self.muerrorref:
 			
-			# Split step method
-			wf.x=wf.x*self.Ux(wf.x)
-			wf.x2p()
-			wf.p=wf.p*self.Up 
-			wf.p2x() 
-			wf.x=wf.x*self.Ux(wf.x) 
+			# ~ # Split step method
+			# ~ wf.x=wf.x*self.Ux(wf.x)
+			# ~ wf.x2p()
+			# ~ wf.p=wf.p*self.Up 
+			# ~ wf.p2x() 
+			# ~ wf.x=wf.x*self.Ux(wf.x) 
 			
-			# Notmalization
-			wf.normalizeX()
+			# ~ # Notmalization
+			# ~ wf.normalizeX()
 			
-			# Compute mu=(1-||<wf(t)|wf(t+dt)>||^2)/dt to compare with monitoring value
-			mu=(1.0-abs(sum(np.conj(wf.x)*wf0x)*self.grid.intweight)**2)/self.dt
+			# ~ # Compute mu=(1-||<wf(t)|wf(t+dt)>||^2)/dt to compare with monitoring value
+			# ~ mu=(1.0-abs(sum(np.conj(wf.x)*wf0x)*self.grid.intweight)**2)/self.dt
 			
-			# Iteration
-			wf0x=wf.x
-			i+=1
+			# ~ # Iteration
+			# ~ wf0x=wf.x
+			# ~ i+=1
 			
-			# Output
-			if i%100==0:
-				print("norm =",abs(wf%wf),"mudiff=",mu/self.muerrorref)
+			# ~ # Output
+			# ~ if i%100==0:
+				# ~ print("norm =",abs(wf%wf),"mudiff=",mu/self.muerrorref)
 				
-		# Converged
-		print("Converged in ",i,"iterations with dt=",self.dt)
-		return wf	
+		# ~ # Converged
+		# ~ print("Converged in ",i,"iterations with dt=",self.dt)
+		# ~ return wf
+

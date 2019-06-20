@@ -2,6 +2,7 @@ import sys
 sys.path.insert(0, '..') 
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 from utils.quantum import *
 from utils.classical import *
@@ -29,6 +30,10 @@ from utils.plot import *
 mode=sys.argv[1] # mode selected
 wdir=sys.argv[2] # working (=output) directory
 
+if mode=="initialize":
+	os.mkdir(wdir)
+	os.mkdir(wdir+"trajectories")
+
 if mode=="compute":
 	# Loading input file
 	inputfile=sys.argv[3]
@@ -55,106 +60,62 @@ if mode=="compute":
 	# Create the potential, time propagator and stroboscopic phase space
 	pot=PotentialMP(e,gamma)
 	cp=ClassicalContinueTimePropagator(pot)
-	sb=StrobosopicPhaseSpace(iperiod,ny0,cp,pmax=0.5)
+	pp=PhasePortrait(iperiod,ny0,cp,xmax=np.pi,pmax=np.pi) 
 
 	# Generate and save a trajectory
-	xs,ps = sb.getTrajectory(runid)
-	np.savez(wdir+str(runid),"w", x=xs, p=ps)
+	x,p=pp.getTrajectory(runid)
+	sc=pp.getChaoticity(x,p)
+	np.savez(wdir+"trajectories/"+str(runid),"w", x=x, p=p,sc=sc)
+	
+if mode=="gather":
+	data=np.load(wdir+"params.npz")
+	e=data['e']
+	gamma=data['gamma']
+	h=data['h']	
+	iperiod=data['iperiod']
+	ny0=data['ny0']
+	data.close()
+	
+	sc=np.zeros(ny0)
+	x=np.zeros((ny0,iperiod))
+	p=np.zeros((ny0,iperiod))
+	norms=0.0
+	for i in range(0,ny0):
+		data=np.load(wdir+"trajectories/"+str(i)+".npz")
+		x[i,:]=data['x']
+		p[i,:] = data['p']
+		sc[i]= data['sc']
+		data.close()
+		norms=max(sc[i],norms)
+	sc=sc/norms
+	np.savez(wdir+"all-trajectories","w", x=x, p=p,sc=sc)
 
 if mode=="plot":
 	# Loading inpute file
 	data=np.load(wdir+"params.npz")
 	e=data['e']
 	gamma=data['gamma']
-	h=data['h']	
-	iperiod=data['iperiod']
-	s=data['s']
-	nu=data['nu']
 	ny0=data['ny0']
 	data.close()
 	
 	# General plotting setup
 	ax = plt.axes()
 	ax.set_xlim(-np.pi,np.pi)
-	ax.set_ylim(-1.0,1.0)
+	ax.set_ylim(-2.0,2.0)
 	ax.set_aspect('equal')
 	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f}$".format(e,gamma))
 
 	# Plotting the SPS
-	for i in range(0,ny0):
-		data=np.load(wdir+str(i)+".npz")
-		x=data["x"]
-		p=data["p"]
-		plt.scatter(x,p,s=01.0**2)
-	
-	h1=0.2/(2)
-	a=0.5*np.sqrt(h1)
-	b=2.5
-	x1=np.array([a,a,-a,-a,a])
-	y1=np.array([b-a,b+a,b+a,b-a,b-a])
-	#plt.plot(x1,y1)	
+	cmap=plt.get_cmap("jet")
 
-	h1=0.45/(2)
-	a=0.5*np.sqrt(h1)
-	b=-2.5
-	x1=np.array([a,a,-a,-a,a])
-	y1=np.array([b-a,b+a,b+a,b-a,b-a])
-	#plt.plot(x1,y1)	
-
-	
-	# Export the SPS as .png
-	plt.savefig(wdir+"SPS.png", bbox_inches = 'tight')
-	#saveLatex(wdir+"SPS.png")
-
-if mode=="show":
-	#setLatex()
-	f = plt.figure(figsize=get_figsize(wf=1.0,hf=0.5))
-	ax = plt.gca()
-	# Loading inpute file
-	data=np.load(wdir+"params.npz")
-	e=data['e']
-	gamma=data['gamma']
-	h=data['h']	
-	iperiod=data['iperiod']
-	s=data['s']
-	nu=data['nu']
-	ny0=data['ny0']
+	data=np.load(wdir+"all-trajectories.npz")
+	x=data["x"]
+	p=data["p"]
+	sc=data["sc"]
 	data.close()
-	
-	# General plotting setup
-	ax.set_xlim(-np.pi,np.pi)
-	ax.set_ylim(-0.5*np.pi,0.5*np.pi)
-	ax.set_aspect('equal')
-	#ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f}$".format(e,gamma))
-	ax.set_xticks([-np.pi,-0.5*np.pi,0,0.5*np.pi,np.pi])
-	ax.set_xticklabels([r"$-\pi$",r"$-\pi/2$","$0$",r"$\pi/2$",r"$\pi$"])
-	ax.set_xlabel(r"$x$")
-	ax.set_yticks([-0.5*np.pi,0,0.5*np.pi])
-	ax.set_yticklabels([r"$-\pi/2$","$0$",r"$\pi/2$"])
-	ax.set_ylabel(r"$p$")
-
-	# Plotting the SPS
+		
 	for i in range(0,ny0):
-		data=np.load(wdir+str(i)+".npz")
-		x=data["x"]
-		p=data["p"]
-		plt.scatter(x,p,s=01.0**2)
-	
-	h1=0.2/(2)
-	a=0.5*np.sqrt(h1)
-	b=2.5
-	x1=np.array([a,a,-a,-a,a])
-	y1=np.array([b-a,b+a,b+a,b-a,b-a])
-	#plt.plot(x1,y1)	
+		plt.scatter(x[i,:],p[i,:],s=0.05**2,c=cmap(sc[i]))
 
-	h1=0.45/(2)
-	a=0.5*np.sqrt(h1)
-	b=-2.5
-	x1=np.array([a,a,-a,-a,a])
-	y1=np.array([b-a,b+a,b+a,b-a,b-a])
-	#plt.plot(x1,y1)	
-
-	
-	# Export the SPS as .png
-	#plt.savefig(wdir+"SPS.png", bbox_inches = 'tight')
-	plt.show()
+	plt.savefig(wdir+"phase-portrait.png", bbox_inches = 'tight',format="png")
+	#plt.savefig(wdir+"phase-portrait.pdf", bbox_inches = 'tight',format="pdf")

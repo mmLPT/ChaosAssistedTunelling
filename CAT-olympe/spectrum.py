@@ -60,13 +60,14 @@ if mode=="compute":
 		np.savez(wdir+"params","w", description=description, nruns=nruns,N=N, e=e,gamma=gamma,x0=x0,nstates=nstates,hmin=hmin,hmax=hmax)
 
 	# Initialization of the grid for given h value
-	h=np.linspace(hmin,hmax,nruns)[runid]
+	h=1/np.linspace(1.0/hmax,1.0/hmin,nruns)[runid]
 	grid=Grid(N,h)
 
 	# Creating array to store data
-	qEs=np.zeros(nstates)
-	overlaps=np.zeros(nstates)
-	symX=np.zeros(nstates)
+	ins=np.zeros(N)
+	qEs=np.zeros(N)
+	overlaps=np.zeros(N,dtype=complex)
+	symX=np.zeros(N,dtype=bool)
 
 	# Create and diag the Floquet operator
 	fo=CATFloquetOperator(grid,pot)
@@ -77,10 +78,10 @@ if mode=="compute":
 	wfcs.setState("coherent",x0=x0,xratio=2.0)
 
 	# Compute the overlap between wfcs and the eigenstates of the Floquet operator
-	fo.computeOverlapsAndQEs(wfcs)
-
-	# Get the quasienergies, overlaps and symetries of the nstates with highest overlap on wfcs
-	qEs,overlaps,symX=fo.getQEsOverlapsSymmetry(nstates)
+	ind, overlaps=fo.getOrderedOverlapsWith(wfcs)
+	for i in range(0,N):
+		qEs[i]=fo.getQE(ind[i])
+		symX[i]=fo.getEvec(ind[i]).isSymetricInX()
 		
 	# Save data
 	np.savez(wdir+str(runid),"w", h=h, qEs=qEs, overlaps=overlaps,symX=symX)
@@ -94,15 +95,16 @@ if mode=="gather":
 	nstates=data['nstates']
 	hmin=data['hmin']
 	hmax=data['hmax']
+	N=data['N']
 	e=data['e']
 	gamma=data['gamma']
 	data.close()
 
 	# Create array to store data
-	qEs=np.zeros((nruns,nstates))
-	overlaps=np.zeros((nruns,nstates))
-	symX=np.zeros((nruns,nstates))
-	h=np.linspace(hmin,hmax,nruns)
+	qEs=np.zeros((nruns,N))
+	overlaps=np.zeros((nruns,N),dtype=complex)
+	symX=np.zeros((nruns,N))
+	h=1/np.linspace(1.0/hmax,1.0/hmin,nruns)
 	
 	# For each runs read the output and add it to the new array
 	for i in range(0,nruns):
@@ -133,19 +135,19 @@ if mode=="plot":
 	ax.set_xlabel(r"h")
 	ax.set_ylabel(r"$qEs/h$")
 	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.2f}$".format(e,gamma))
-	ax.set_xlim(min(h),max(h))
-	ax.set_ylim(-1.0,3.0)
+	#ax.set_xlim(min(1/h),max(1/h))
+	#ax.set_ylim(-1.0,3.0)
 
 	for irun in range(0,nruns):
 		# We want to rescale the overlap to 1 for each value of h
 		# to do so we start focusing on the 2 states with highest overlap
 		# check if they are sym or asym
 		if symX[irun,0]==True:
-			Nsym=overlaps[irun,0]
-			Nasym=overlaps[irun,1]
+			Nsym=abs(overlaps[irun,0])**2
+			Nasym=abs(overlaps[irun,1])**2
 		else:
-			Nsym=overlaps[irun,1]
-			Nasym=overlaps[irun,0]
+			Nsym=abs(overlaps[irun,1])**2
+			Nasym=abs(overlaps[irun,0])**2
 
 		# Then we create colormap
 		cmapSym = plt.cm.get_cmap('Blues')
@@ -153,19 +155,19 @@ if mode=="plot":
 
 		# And generate on of lenght nstates scaled by weight for sym and asym
 		# so that it goes from 0 to 1
-		rgbaSym = cmapSym(overlaps[irun,:]/Nsym)
-		rgbaAsym = cmapAsym(overlaps[irun,:]/Nasym)
+		rgbaSym = cmapSym(abs(overlaps[irun,:])**2/Nsym)
+		rgbaAsym = cmapAsym(abs(overlaps[irun,:])**2/Nasym)
 		#print(irun)
 
-		for istate in range(3,-1,-1):
+		N=5
+		for istate in range(0,N):
 			if symX[irun,istate]==True:
-				plt.scatter(h[irun],2*np.pi*qEs[irun,istate]/h[irun],c=rgbaSym[istate],s=1.0**2)
-				plt.scatter(h[irun],2*np.pi*(qEs[irun,istate]/h[irun]+0.5),c=rgbaSym[istate],s=1.0**2)
+				plt.scatter(1/h[irun],2*np.pi*qEs[irun,istate]/h[irun],c=rgbaSym[istate],s=0.5**2,zorder=N-istate)
 			else:
-				plt.scatter(h[irun],2*np.pi*qEs[irun,istate]/h[irun],c=rgbaAsym[istate],s=1.0**2)
-				plt.scatter(h[irun],2*np.pi*(qEs[irun,istate]/h[irun]+0.5),c=rgbaAsym[istate],s=1.0**2)
+				plt.scatter(1/h[irun],2*np.pi*qEs[irun,istate]/h[irun],c=rgbaAsym[istate],s=0.5**2,zorder=N-istate)
 
-	#plt.show()
-	plt.savefig(wdir+"spectrum.png") 
+
+	plt.show()
+	#plt.savefig(wdir+"spectrum.pdf", bbox_inches='tight',format="pdf") 
 	
 

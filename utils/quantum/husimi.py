@@ -83,8 +83,8 @@ class Husimi:
 		# Generla settings : tile/axes
 		plt.title(title)
 		ax = plt.axes()
-		#ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)
-		ax.set_ylim(-np.pi,np.pi)
+		ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)
+		#ax.set_ylim(-np.pi,np.pi)
 		ax.set_xlim(-self.grid.xmax/2.0,self.grid.xmax/2.0)
 		ax.set_aspect('equal')
 		

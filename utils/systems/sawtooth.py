@@ -8,17 +8,13 @@ from utils.mathtools.periodicfunctions import *
 from utils.systems.potential import *
 
 class PotentialST(Potential):
-	def __init__(self,alpha):
+	def __init__(self,gamma):
 		Potential.__init__(self)
-		self.alpha=alpha
-		self.dx=1.0
-		self.isTimeDependent=False
-		self.T0=2*np.pi
+		self.gamma=gamma
+		self.dx=2*np.pi
+		self.T0=1.0
 		self.idtmax=1
 		
 	def Vx(self,x):
-		return self.alpha*np.mod(x,self.dx)
-	
-	def dVdx(self,x):
-		return -self.alpha
+		return -4*np.pi**2*self.gamma*np.mod(x/self.dx,1.0)
 		

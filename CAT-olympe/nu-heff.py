@@ -11,6 +11,8 @@ from utils.classical import *
 from utils.plot.latex import *
 from utils.systems.modulatedpendulum import *
 
+
+
 # This scripts makes possibles to 
 # 1. compute in // the free propagation for different quasi-momentum
 # 2. gather and average the results
@@ -21,6 +23,7 @@ wdir=sys.argv[2]
 
 if mode=="initialize":
 	os.mkdir(wdir)
+	os.mkdir(wdir+"trajectories")
 	os.mkdir(wdir+"pictures")
 
 if mode=="compute":
@@ -62,7 +65,8 @@ if mode=="compute":
 	xL=np.zeros(iperiod)
 
 	# Initialization of the grid for given h value
-	h=np.linspace(hmin,hmax,nh)[runid]
+	h=1.0/(np.linspace(1.0/hmax,1.0/hmin,nh)[runid])
+	
 	grid=Grid(N,h)
 	
 	# Create the Floquet operator
@@ -82,18 +86,18 @@ if mode=="compute":
 	xL=xL/A
 	xR=xR/A
 
-	np.savez(wdir+str(runid),"w", xL = xL, xR=xR)
+	np.savez(wdir+"trajectories/"+strint(runid),"w", xL = xL, xR=xR)
 
 
 	time=2.0*np.linspace(0.0,1.0*iperiod,num=iperiod,endpoint=False)
 	ax=plt.gca()
 	ax.set_xlim(0,200)
 	ax.set_ylim(0,1.0)
-	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.2f} \quad h={:.3f}$".format(e,gamma,h))
+	s,nu,x0exp=convert2exp(gamma,h,x0)
+	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f} \quad h={:.3f} \quad x0={:.1f}$".format(e,gamma,h,x0)+"\n"+r"$\varepsilon={:.2f} \quad s={:.3f} \quad \nu={:.3f} kHz \quad x_0={:.1f}^o$".format(e,s,nu/10**3,x0exp))
 	plt.plot(time,xL, c="red")
 	plt.plot(time,xR, c="blue")
 	plt.savefig(wdir+"pictures/"+strint(runid)+".png") 
-
 
 if mode=="final":
 	data=np.load(wdir+"params.npz")
@@ -106,109 +110,57 @@ if mode=="final":
 	x0=data['x0']
 	data.close()
 
-	iTF=100 
-	#iTF=int(iperiod)
+	iTF=int(iperiod)
+	
 
 	#density=np.zeros((int(iperiod/2)+1,nh))
-	density=np.zeros((int(iTF/2)+1,nh))
-	h=np.linspace(hmin,hmax,nh)
-	print(nh)
+	
+	
+	hm=np.linspace(1.0/hmax,1.0/hmin,nh)
+	s=np.linspace(1.0/hmax,1.0/hmin,nh)**2*4*gamma
 	omegas=np.fft.rfftfreq(iTF,d=2.0)*2*np.pi
 
-	a=0
+	X,Y=np.meshgrid(hm,omegas)
+	
+	Z=np.zeros((int(iTF/2)+1,nh))
+	print(X.shape,Y.shape,Z.shape)
 	time=2.0*np.linspace(0.0,1.0*iperiod,num=iperiod,endpoint=False)
+	
+
 	for ih in range(0,nh):
-		data=np.load(wdir+str(ih)+".npz")
-		xL=data['xL'][:iTF].copy()
-		xR=data['xR'][:iTF].copy()
-		#plt.plot(xL)
-		#plt.show()
+		data=np.load(wdir+"trajectories/"+strint(ih)+".npz")
+		xL=data['xL']*np.exp(-30*time/time[iperiod-1])
+		xR=data['xR']*np.exp(-30*time/time[iperiod-1])
 		xLf=np.abs(np.fft.rfft(xL))
 		xRf=np.abs(np.fft.rfft(xR))
 		xLf[0]=0.0
 		xRf[0]=0.0
-		density[:,ih]=(xLf+xRf)*0.5
-		a=max(a,max(density[:,ih]))
+		
 
-		#time=2.0*np.linspace(0.0,1.0*iperiod,num=iperiod,endpoint=False)
-		#ax=plt.gca()
-		#ax.set_xlim(0,1000)
-		#ax.set_ylim(0,1.0)
-		#ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.2f} \quad h={:.3f}$".format(e,gamma,h[ih]))
-		#plt.plot(time,data['xL'], c="red")
-		#plt.plot(time,data['xR'], c="blue")
-		#plt.savefig(wdir+"pictures/"+strint(ih)+".png") 
-		#plt.clf()
+		Z[:,ih]=(xLf+xRf)*0.5
 
-	a=np.percentile(density,99.80)
-	density=density/a
-
+	np.savez(wdir+"nu-heff","w", hm=X,omegas=Y,tf=Z,e=e,gamma=gamma,x0=x0,iperiod=iperiod)
 	ax=plt.gca()
-	#ax.set_xlim(min(h),max(h))
-	#ax.set_ylim(0.001,max(omegas))
-	ax.set_xlabel("h")
-	ax.set_ylabel("omega")
-	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f}$".format(e,gamma))
-	omegas[0]=omegas[1]
-	#ax.set_ylim(min(1.0/omegas),max(1.0/omegas)/2.0)
-	#ax.set_ylim(min(omegas),max(omegas))
-	#ax.set_yscale("log")
-	levels = MaxNLocator(nbins=100).tick_values(0.0,1.0)	
+
+	ax.set_xlabel("1/heff")
+	ax.set_ylabel("frequence")
+	ax.set_title(r"$\varepsilon={:.3f} \quad \gamma={:.3f} \quad x_0={:.1f} $".format(e,gamma,x0))
+	ax.set_yscale("log")
+	ax.set_ylim(0.01,max(omegas))
+
 	cmap = plt.get_cmap('Greys')
-	norm = colors.LogNorm(0.01,1.0) 
-	norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
-	#plt.contourf(h,omegas,np.sqrt(density), levels=levels,cmap=cmap)
-	plt.pcolormesh(h,omegas,density, norm=norm,cmap=cmap)
-	#plt.pcolormesh(h,1/omegas,np.sqrt(density), norm=norm,cmap=cmap)
-	plt.savefig(wdir+"final.png")
-	#plt.show()
-
-if mode=="checkTF":
-	data=np.load(wdir+"params.npz")
-	nh=data['nh']
-	iperiod=data['iperiod']
-	hmin=data['hmin']
-	hmax=data['hmax']
-	e=data['e']
-	gamma=data['gamma']
-	x0=data['x0']
-	data.close()
-
-	iTF=100
-	h0=0.245
-	dh=abs((hmax-hmin)/nh)
-	ih=int((h0-hmin)/dh)
-	omegas=np.fft.rfftfreq(int(iTF),d=2.0)*2*np.pi
-
-	h=np.linspace(hmin,hmax,nh)[ih]
-
-
-	data=np.load(wdir+str(ih)+"/averaged.npz")
-	time=data['time']
-	xL=data['xL'][:iTF].copy()
-	xR=data['xR'][:iTF].copy()
 	
-	xLf=np.abs(np.fft.rfft(xL))
-	xRf=np.abs(np.fft.rfft(xR))
-	xLf[0]=0.0
-	xRf[0]=0.0
+	
+	
+	plt.pcolormesh(X,Y,Z,cmap=cmap)
+	#plt.savefig(wdir+"final-heff.pdf",bbox_inches = 'tight',format="pdf") 
+	
+	# ~ X,Y=np.meshgrid(s,omegas)
+	# ~ plt.pcolormesh(X,Y,Z,cmap=cmap)
+	# ~ #plt.show()
+	plt.savefig(wdir+"final-s.png",bbox_inches = 'tight',format="png",dpi=150) 
 
-	#setLatex()
-	f = plt.figure()
-	ax = f.add_subplot(3, 1, 1)
-	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f} \quad h={:.3f}$".format(e,gamma,h))
-	ax.set_xlim(0,iTF*2.0)
-	plt.plot(time,data['xL'])
-	plt.plot(time,data['xR'])
-	ax = f.add_subplot(3, 1, 2)
-	plt.scatter(omegas,xLf)
-	ax = f.add_subplot(3, 1, 3)
-	omegas[0]=omegas[int(iTF/2)-1]
-	ax.set_xscale('log')
-	plt.scatter(2*np.pi/omegas,xLf)
-	plt.savefig(wdir+"TF+freepop-h{:.3f}.png".format(h))
-	#plt.show()
-
+	
 	
 
 
