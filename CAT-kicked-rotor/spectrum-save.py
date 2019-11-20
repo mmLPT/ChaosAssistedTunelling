@@ -1,14 +1,13 @@
 import sys
 sys.path.insert(0, '..')
-import os
-
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 from utils.toolsbox import *
 from utils.quantum import *
 from utils.classical import *
-from utils.systems.modulatedpendulum import *
+from utils.systems.kickedrotor import *
 
 # State: stable [22/02/2019]
 
@@ -41,31 +40,26 @@ if mode=="compute":
 	# Loading input file
 	inputfile=sys.argv[3]
 	data=np.load(inputfile+".npz")
-	description=data['description']  
 	N=int(data['N'])
-	e=data['e']
-	gamma=data['gamma']
-	x0=data['x0'] 
+	K=data['K']
 	hmin=data['hmin']
 	hmax=data['hmax']
 	data.close()
 
 	# Initialization of potential and correcting the x0 value if needed
-	
-
+	pot=PotentialKR(K)
 	
 	nruns=int(sys.argv[4])+1 # Total number of // runs
 	runid=int(sys.argv[5]) # Id of the current run
 	if runid==0: # This generate and parameters files in the working directory with read input (to avoid surprises)		
-		np.savez(wdir+"params","w", description=description, nruns=nruns,N=N, e=e,gamma=gamma,x0=x0,hmin=hmin,hmax=hmax)
+		np.savez(wdir+"params","w", nruns=nruns,K=K,hmin=hmin,hmax=hmax,N=N)
 
 	# Initialization of the grid for given h value
 	h=1/np.linspace(1.0/hmax,1.0/hmin,nruns)[runid]
 	grid=Grid(N,h)
-	pot=PotentialMP(e,gamma)
 
 	# Creating array to store data
-	ind=np.zeros(N)
+	ins=np.zeros(N)
 	qEs=np.zeros(N)
 	overlaps=np.zeros(N,dtype=complex)
 	symX=np.zeros(N,dtype=bool)
@@ -76,7 +70,7 @@ if mode=="compute":
 
 	# Create a coherent state localized in x0 with width = 2.0 in x
 	wfcs=WaveFunction(grid)
-	wfcs.setState("coherent",x0=x0,xratio=2.0)
+	wfcs.setState("coherent",x0=0.0,xratio=2.0)
 
 	# Compute the overlap between wfcs and the eigenstates of the Floquet operator
 	ind, overlaps=fo.getOrderedOverlapsWith(wfcs)
@@ -88,23 +82,22 @@ if mode=="compute":
 	np.savez(wdir+"runs/"+str(runid),"w", h=h, qEs=qEs, overlaps=overlaps,symX=symX)
 
 if mode=="gather":
-	# This mode gather the data file from each run into gathered.npz
+	# This mode collect the spectrum for each value of h and make a single file
 
 	# Reading inputfile
 	data=np.load(wdir+"params.npz")
 	nruns=data['nruns']
+	N=data['N']
 	hmin=data['hmin']
 	hmax=data['hmax']
-	N=data['N']
-	e=data['e']
-	gamma=data['gamma']
+	K=data['K']
 	data.close()
 
 	# Create array to store data
 	qEs=np.zeros((nruns,N))
 	overlaps=np.zeros((nruns,N),dtype=complex)
 	symX=np.zeros((nruns,N))
-	h=np.zeros((nruns,N))
+	h=1/np.linspace(1.0/hmax,1.0/hmin,nruns)
 	
 	# For each runs read the output and add it to the new array
 	for i in range(0,nruns):
@@ -112,20 +105,19 @@ if mode=="gather":
 		qEs[i]=data['qEs']
 		overlaps[i]=data['overlaps']
 		symX[i]=data['symX']
-		h[i]=data['h']
 		data.close()
 
 	# Save the array
-	np.savez(wdir+"gathered","w", e=e,gamma=gamma,h=h,qEs=qEs,overlaps=overlaps,symX=symX,nruns=nruns)
+	np.savez(wdir+"gathered","w", K=K,h=h,qEs=qEs,overlaps=overlaps,symX=symX,nruns=nruns,N=N)
 
 if mode=="plot":
 	# Reading inputfile
 	data=np.load(wdir+"gathered.npz")
-	e=data['e']
-	gamma=data['gamma']
+	K=data['K']
 	h=data['h']
+	N=int(data['N'])
 	qEs=data['qEs']
-	overlaps=np.abs(data['overlaps'])**2
+	overlaps=data['overlaps']
 	nruns=data['nruns']
 	symX=data['symX']
 	data.close()
@@ -133,31 +125,49 @@ if mode=="plot":
 	# General setup for plotting
 	ax=plt.gca()
 	ax.set_xlabel(r"h")
-	ax.set_ylabel(r"$qEs T/2\pi h $")
-	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.2f}$".format(e,gamma))
-	ax.set_xlim(np.min(1/h),np.max(1/h))
-	ax.set_ylim(-0.5,0.5)
-	ax.grid()
+	ax.set_ylabel(r"$qEs/h$")
+	ax.set_title(r"$K={:.2f}$".format(K))
+	# ~ ax.set_xlim(min(1/h),max(1/h))
+	# ~ ax.set_xlim(min(1/h),3.5)
+	#ax.set_ylim(-1.0,3.0)
 	
-	# Select qEs corresponding to states that overlaps significantly with "WKB" states
-	overlaps=overlaps/np.max(overlaps)
-	condOverlaps=(overlaps>0.1)
-	qEs=qEs[condOverlaps!=0]
-	h=h[condOverlaps!=0]
-	overlaps=overlaps[condOverlaps!=0]
-	symX=symX[condOverlaps!=0]
-	ind=np.argsort(overlaps) #Ordering points with overlap to have scatter to work well
+	print(1/h)
+
+	for irun in range(0,nruns):
+		# We want to rescale the overlap to 1 for each value of h
+		# to do so we start focusing on the 2 states with highest overlap
+		# check if they are sym or asym
+		if symX[irun,0]==True:
+			Nsym=abs(overlaps[irun,0])**2
+			Nasym=abs(overlaps[irun,1])**2
+		else:
+			Nsym=abs(overlaps[irun,1])**2
+			Nasym=abs(overlaps[irun,0])**2
+
+		# Then we create colormap
+		cmapSym = plt.cm.get_cmap('Blues')
+		cmapAsym = plt.cm.get_cmap('Reds')
+
+		# And generate on of lenght nstates scaled by weight for sym and asym
+		# so that it goes from 0 to 1
+		rgbaSym = cmapSym(abs(overlaps[irun,:])**2/Nsym)
+		rgbaAsym = cmapAsym(abs(overlaps[irun,:])**2/Nasym)
+		#print(irun)
+
+		# ~ for istate in range(0,N):
+			# ~ if symX[irun,istate]==True:
+				# ~ plt.scatter(1/h[irun],2*np.pi*qEs[irun,istate]/h[irun],c=rgbaSym[istate],s=0.5**2,zorder=N-istate)
+			# ~ else:
+				# ~ plt.scatter(1/h[irun],2*np.pi*qEs[irun,istate]/h[irun],c=rgbaAsym[istate],s=0.5**2,zorder=N-istate)
+				
+		for istate in range(0,N):
+			if symX[irun,istate]==True:
+				plt.scatter(1/h[irun],2*np.pi*qEs[irun,istate]/h[irun],c="red",s=0.5**2,zorder=2)
+			else:
+				plt.scatter(1/h[irun],2*np.pi*qEs[irun,istate]/h[irun],c="blue",s=0.5**2,zorder=1)
+
+	# ~ ax.legend()
+	# ~ plt.show()
+	plt.savefig(wdir+"spectrum.png", bbox_inches='tight',dpi=250) 
 	
-	# Colormap for symetric and antisymetric states
-	cmapSym = plt.cm.get_cmap('RdYlGn_r')
-	cmapAsym = plt.cm.get_cmap('Blues')
-	c=cmapSym(overlaps)
-	# Filling the color of each quasi-energy with colormp propoto overlaps
-	c[symX!=0]=cmapSym(overlaps[symX!=0]/np.max(overlaps[symX!=0])) 
-	c[symX!=1]=cmapAsym(overlaps[symX!=1]/np.max(overlaps[symX!=1])) 
-
-	# Plot
-	plt.scatter(1/h[ind],4*np.pi*qEs[ind]/(h[ind]*2*np.pi),c=c[ind],s=1**2)
-
-	plt.savefig(wdir+"spectrum.png", bbox_inches='tight') 
 

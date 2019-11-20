@@ -4,17 +4,17 @@
 #SBATCH -n 180
 #SBATCH --ntasks-per-core=1
 #SBATCH --ntasks-per-node=36
-#SBATCH --time=00:30:00
-#SBATCH --job-name="no beta"
+#SBATCH --time=00:45:00
+#SBATCH --job-name="nu_heff"
 
 
 module purge
 module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
-nruns=360
-name=test
-wdir=/tmpdir/p0110mm/${SLURM_JOB_ID}-nu-heff-$name
+nruns=179
+name=e0d399-g0d315
+wdir=/tmpdir/p0110mm/cat-LCAR/nu-heff-$name-${SLURM_JOB_ID}
 inputfile=input/$name
 
 python3 nu-heff.py initialize $wdir/

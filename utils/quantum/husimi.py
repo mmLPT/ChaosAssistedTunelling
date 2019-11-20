@@ -4,7 +4,9 @@ from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 from utils.quantum.grid import *
 from utils.quantum.wavefunction import *
-from utils.plot.latex import *
+from utils import latex as latex
+
+import matplotlib.image as mpimg
 
 # This scripts contains: 1 class
 # + class : Husimi
@@ -14,7 +16,7 @@ class Husimi:
 	# of wavefunctions. It is build from a grid, so you can generate 
 	# representation of differents wave functions from a single object
 	
-	def __init__(self, grid, scale=3.0,pmax=2*np.pi):
+	def __init__(self, grid, scale=1.0,pmax=2*np.pi):
 		self.grid=grid
 		self.scale=scale 
 		# Husimi grid is defined over coherent states, but you can  
@@ -49,7 +51,7 @@ class Husimi:
 				if i> i0+self.N/2:
 					self.pshift[ip][i]=pgrid[i]-self.N*self.h	
 
-	def getRho(self,wf):
+	def getRho(self,wf,i1=0,i2=1):
 		# Computes Husimi representation of a given wavefunction
 		# It returns a 1-normalized 2D-density
 		rho=np.zeros((self.Np,self.Nx))
@@ -57,44 +59,82 @@ class Husimi:
 		for ip in range(0,self.Np):	
 			p0=self.p[ip]
 			phi1=np.exp(-(self.pshift[ip]-p0)**2/(2*self.sigmap**2))
-			for ix in range(0,self.Nx):
+			for ix in range(int(i1*self.Nx),int(i2*self.Nx)):
 				phi=phi1*np.exp(-(1j/self.h)*(self.x[ix]+self.xmax/2.0)*self.pshift[ip])
 				rho[ip][ix]= abs(sum(np.conj(phi)*psip))**2
 		nrm2=np.sum(rho)
 		return rho/nrm2
 		
-	def save(self, wf, datafile, title="", convert=True):
+	def save(self, wf, datafile,i1=0,i2=1):
 		# Saves the Husimi representation in 'datafile.npz' file
 		# If 'convert' is true, generates 'datafile.png' with npz2png
-		rho=self.getRho(wf)
+		rho=self.getRho(wf,i1=i1,i2=i2)
 		np.savez(datafile,"w", rho=rho,x=self.x,p=self.p)
-		if convert:
-			self.npz2png(datafile, title=title)
 		
-	def npz2png(self, datafile, title=""):
+	def npz2png(self, datafile,SPSclassfile='',SPSclassbool=False,cmapl="Greys",textstr="",xmax=2*np.pi):
 		# Get data from .npz file
 		data=np.load(datafile+".npz")
 		rho=data["rho"]
 		x=data["x"]
 		p=data["p"]
 		R=rho.max()
+		# ~ rho=rho/0.0040 #0.0016
 		rho=rho/R
-			
+		
+		
+		fig = latex.fig(columnwidth=345.0,wf=1.0,hf=2.0/np.pi)
+		fig.set_frameon(False)
+		
 		# Generla settings : tile/axes
-		plt.title(title)
-		ax = plt.axes()
-		ax.set_ylim(-self.pmax/2.0,self.pmax/2.0)
-		#ax.set_ylim(-np.pi,np.pi)
-		ax.set_xlim(-self.grid.xmax/2.0,self.grid.xmax/2.0)
+		ax=plt.gca()
+		# ~ ax.set_ylim(-0.5*np.pi,0.5*np.pi)
+		ax.set_ylim(-2.0,2.0)
+		ax.set_xlim(-max(self.x),max(self.x))
+		# ~ ax.set_xlim(-7.5*np.pi,7.5*np.pi)
 		ax.set_aspect('equal')
+		# ~ ax.set_xticks([-np.pi,-0.5*np.pi,0,0.5*np.pi,np.pi])
+		# ~ ax.set_xticklabels([r"$-\pi$",r"$-\pi/2$",r"$0$",r"$\pi/2$",r"$\pi$"])
+		# ~ ax.set_yticks([-0.5*np.pi,0,0.5*np.pi])
+		# ~ ax.set_yticklabels([r"$-\pi/2$",r"$0$",r"$\pi/2$"])
 		
+		ax.set_xticks([])
+		ax.set_yticks([])
+		ax.set_xticklabels([])
+		ax.set_yticklabels([])
+		if SPSclassbool==True:
+			img=mpimg.imread(SPSclassfile+".png")
+			for i in range(0,int(max(self.x)/np.pi)+1):
+				x1=min(self.x)+i*2*np.pi
+				ax.imshow(img,extent=[x1,x1+2*np.pi,-2.0, 2.0])
+			
 		# 2D map options
-		levels = MaxNLocator(nbins=150).tick_values(0.0,1.0)	
-		cmap = plt.get_cmap('plasma')
-		norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
-		plt.contourf(x,p,rho, levels=levels,cmap=cmap)
-		#plt.pcolormesh(x,p,rho, norm=norm,cmap=cmap)
 		
+		mnlvl=0.0
+		levels = np.linspace(mnlvl,1.0,100)	
+		cmap = plt.get_cmap(cmapl)
+		norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+		plt.contourf(x,p,rho, levels=levels,cmap=cmap,alpha=0.5)
+		levels = np.linspace(mnlvl,1.0,6)	
+		# ~ levels = [0.10]
+		contours=plt.contour(x,p,rho, levels=levels,colors="k",linestyles="-",linewidths=1.5)
+		# ~ contours=plt.contour(x,p,rho, levels=levels,colors="k",linewidths=0.5)
+		# ~ plt.clabel(contours, inline=True, fontsize=8)
+		# ~ plt.pcolormesh(x,p,rho, norm=norm,cmap=cmap)
+			
+		
+		# ~ ax.set_xticks(np.linspace(-self.xmax/2,self.xmax/2,int(self.xmax/np.sqrt(self.h)),endpoint=True),minor=True)
+		# ~ ax.set_xticks(np.linspace(-self.xmax/2,self.xmax/2,np.ceil(0.5*self.xmax/np.pi)+1,endpoint=True))
+		ax.set_yticks(np.linspace(-2.0,2.0,int(4.0/np.sqrt(self.h)),endpoint=True),minor=True)
+		# ~ ax.grid(which='minor', color="black",alpha=0.2)
+		# ~ ax.grid(which='major', color="red",alpha=1.0)
+		
+		props = dict(boxstyle='square', facecolor='white', alpha=1.0)
+
+		# ~ ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,verticalalignment='top', bbox=props)
+		
+		fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+
 		# Saving fig
-		plt.savefig(datafile+".png", bbox_inches='tight')
-		plt.clf() 
+		latex.save(datafile,form="png",dpi=500,transparent=True,bbox_inches='')
+		plt.close(fig)
+	

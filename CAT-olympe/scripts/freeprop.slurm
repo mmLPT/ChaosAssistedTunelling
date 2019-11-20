@@ -4,7 +4,7 @@
 #SBATCH -n 180
 #SBATCH --ntasks-per-core=1
 #SBATCH --ntasks-per-node=36
-#SBATCH --time=00:10:00
+#SBATCH --time=00:01:00
 #SBATCH --job-name="FREEPROP"
 
 
@@ -12,8 +12,8 @@ module purge
 module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
-nruns=5000
-name=s_9d75-nu_52d68-e_0d6-x0_28d6-Ndb_2d0
+nruns=359
+name=e0d24-g0d370-N150
 wdir=/tmpdir/p0110mm/$name-freeprop-${SLURM_JOB_ID}
 inputfile=input/$name
 

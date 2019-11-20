@@ -12,8 +12,8 @@ module purge
 module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
-nruns=10000
-name=a_0d7
+nruns=1000
+name=a_6d0
 inputfile=input/$name
 wdir=/tmpdir/p0110mm/MuF-SpacingDistribution-$name-${SLURM_JOB_ID}
 

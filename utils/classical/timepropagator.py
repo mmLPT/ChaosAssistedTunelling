@@ -12,8 +12,10 @@ class ClassicalDiscreteTimePropagator:
 
 	def propagate(self,y):
 		yp=np.zeros(2) #y'
-		yp[1]=y[1]-self.potential.dVdx(y[0])
-		yp[0]=y[0]+yp[1]
+		# ~ yp[1]=y[1]-self.potential.dVdx(y[0])
+		# ~ yp[0]=y[0]+yp[1]
+		yp[1]=y[1]-self.potential.dVdx(y[0]+0.5*y[1])
+		yp[0]=y[0]+0.5*(yp[1]+y[1])
 		return yp
 	
 class ClassicalContinueTimePropagator(ClassicalDiscreteTimePropagator):

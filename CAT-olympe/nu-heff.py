@@ -94,7 +94,7 @@ if mode=="compute":
 	ax.set_xlim(0,200)
 	ax.set_ylim(0,1.0)
 	s,nu,x0exp=convert2exp(gamma,h,x0)
-	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.3f} \quad h={:.3f} \quad x0={:.1f}$".format(e,gamma,h,x0)+"\n"+r"$\varepsilon={:.2f} \quad s={:.3f} \quad \nu={:.3f} kHz \quad x_0={:.1f}^o$".format(e,s,nu/10**3,x0exp))
+	ax.set_title(r"$\varepsilon={:.3f} \quad \gamma={:.3f} \quad h={:.3f} \quad 1/h={:.3f} \quad x0={:.1f}$".format(e,gamma,h,1/h,x0)+"\n"+r"$\varepsilon={:.3f} \quad s={:.3f} \quad \nu={:.3f} kHz \quad x_0={:.1f}^o$".format(e,s,nu/10**3,x0exp))
 	plt.plot(time,xL, c="red")
 	plt.plot(time,xR, c="blue")
 	plt.savefig(wdir+"pictures/"+strint(runid)+".png") 
@@ -118,7 +118,7 @@ if mode=="final":
 	
 	hm=np.linspace(1.0/hmax,1.0/hmin,nh)
 	s=np.linspace(1.0/hmax,1.0/hmin,nh)**2*4*gamma
-	omegas=np.fft.rfftfreq(iTF,d=2.0)*2*np.pi
+	omegas=np.fft.rfftfreq(iTF,d=2.0)#*2*np.pi
 
 	X,Y=np.meshgrid(hm,omegas)
 	
@@ -129,8 +129,8 @@ if mode=="final":
 
 	for ih in range(0,nh):
 		data=np.load(wdir+"trajectories/"+strint(ih)+".npz")
-		xL=data['xL']*np.exp(-30*time/time[iperiod-1])
-		xR=data['xR']*np.exp(-30*time/time[iperiod-1])
+		xL=data['xL']*np.exp(-time/1000)
+		xR=data['xR']*np.exp(-time/1000)
 		xLf=np.abs(np.fft.rfft(xL))
 		xRf=np.abs(np.fft.rfft(xR))
 		xLf[0]=0.0
@@ -146,13 +146,39 @@ if mode=="final":
 	ax.set_ylabel("frequence")
 	ax.set_title(r"$\varepsilon={:.3f} \quad \gamma={:.3f} \quad x_0={:.1f} $".format(e,gamma,x0))
 	ax.set_yscale("log")
-	ax.set_ylim(0.01,max(omegas))
+	omegamax=max(omegas)
+	omegamin=0.001
+	ax.set_ylim(omegamin,omegamax)
 
 	cmap = plt.get_cmap('Greys')
 	
 	
 	
 	plt.pcolormesh(X,Y,Z,cmap=cmap)
+	
+	convert2theory(0.1,0.2)
+	
+	plt.errorbar(1/0.3959,1/25.6,yerr=0.5/128,fmt='o')
+	
+	plt.errorbar(1/0.3838,0.02344,yerr=0.5/128,fmt='o')
+	
+	# ~ plt.errorbar(2.77,1/55.0,yerr=0.5/128,fmt='o')
+	
+	# ~ plt.errorbar(2.87,1/90.0,yerr=0.5/128,fmt='o')
+	
+	# ~ plt.errorbar(2.97,1/37.5,yerr=0.5/128,fmt='o')
+	
+	# ~ plt.errorbar(1/0.346,1/110.0,yerr=0.5/128,fmt='o')
+	# ~ plt.errorbar(1/0.346,1/20.0,yerr=0.5/128,fmt='o')
+	
+	# ~ plt.errorbar(2.563,1/19.0,yerr=1/100,fmt='o')
+	# ~ plt.errorbar(3.361,1/30.0,yerr=1/100,fmt='o')
+	# ~ plt.errorbar(3.398,1/40.0,yerr=1/100,fmt='o')
+	# ~ plt.errorbar(4.999,1/50.0,yerr=1/130,fmt='o')
+	
+	# ~ for x0 in [2.57,2.67,2.77,2.87,2.97,3.07,3.17,3.27,3.37]:
+		# ~ plt.plot([x0,x0],[omegamin,omegamax])
+	# ~ plt.plot([2.887,2.887],[omegamin,omegamax])
 	#plt.savefig(wdir+"final-heff.pdf",bbox_inches = 'tight',format="pdf") 
 	
 	# ~ X,Y=np.meshgrid(s,omegas)

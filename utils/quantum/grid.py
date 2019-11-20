@@ -17,8 +17,8 @@ class Grid:
 		self.x=self.x+self.dx/2.0
 		self.p=np.fft.fftfreq(self.N,self.dx)*2*np.pi*self.h 	
 		self.dp=0.5*h/self.dx
-		self.ddx=(np.max(self.x)-np.min(self.x))/self.N
-		self.ddp=(np.max(self.p)-np.min(self.p))/self.N
+		self.ddx=(np.max(self.x)-np.min(self.x))/(self.N-1)
+		self.ddp=(np.max(self.p)-np.min(self.p))/(self.N-1)
 		#print("é",np.max(self.x)-np.min(self.x),self.N,self.ddx)
 		
 		# A p-defined WaveFunction, don't know about x interval, only about 

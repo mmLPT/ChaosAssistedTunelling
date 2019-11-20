@@ -70,6 +70,9 @@ class WaveFunction:
 			self.p[i0]=1.0
 			self.p=self.p*self.grid.phaseshift
 			self.p2x()
+			if norm:
+				self.normalizeX()
+				self.x2p()
 			
 		elif state=="load":
 			# Set |psi> from a file
@@ -106,11 +109,13 @@ class WaveFunction:
 	# === Switching representation x <-> p =============================
 	def p2x(self):
 		# <p|psi> -> <x|psi>
-		self.x=np.fft.ifft(self.p)*self.grid.N
+		# ~ self.x=np.fft.ifft(self.p)*self.grid.N
+		self.x=np.fft.ifft(self.p)*self.grid.N*self.grid.ddp/np.sqrt(2*np.pi*self.grid.h)
 		
 	def x2p(self):
 		# <x|psi> -> <p|psi>
-		self.p=np.fft.fft(self.x)/self.grid.N
+		# ~ self.p=np.fft.fft(self.x)/self.grid.N
+		self.p=np.fft.fft(self.x)*self.grid.ddx/np.sqrt(2*np.pi*self.grid.h)
 	
 	# === Operations on wave function ==================================
 	def __add__(self,other): 
@@ -160,11 +165,21 @@ class WaveFunction:
 		return abs(sum(np.conj(self.x)*other.x)*self.grid.ddx)**2
 		
 	# === I/O ==========================================================
-	def isSymetricInX(self,sigma=0.01):
+	def isSymetricInX(self,sigma=2.0):
+		self.p2x()
 		
-		psix=np.flipud(self.x)-self.x
+		psix=np.flipud(self.x)+self.x
 
-		if  sum(np.conj(psix)*psix)*self.grid.ddx < sigma:
+		if  sum(np.conj(psix)*psix)*self.grid.ddx > sigma:
+			return True
+		else:
+			return False
+			
+	def isSymetricInP(self,sigma=2.0):
+		self.x2p()
+		psip=np.flipud(self.p)-self.p
+
+		if  sum(np.conj(psip)*psip)*self.grid.ddp < sigma:
 			return True
 		else:
 			return False
@@ -172,6 +187,26 @@ class WaveFunction:
 	def getx(self): 
 		# Get <psi|x|psi>
 		return sum(self.grid.x*abs(self.x)**2*self.grid.ddx)
+		
+	def getp2(self): 
+		# Get <psi|p^2|psi>
+		return sum(self.grid.p**2*abs(self.p)**2*self.grid.ddp)
+		
+	def getp(self): 
+		# Get <psi|p|psi>
+		return sum(self.grid.p*abs(self.p)**2*self.grid.ddp)
+		
+	def getpL(self): 
+		# Get <psi|p|psi>
+		return sum((self.grid.p>0)*abs(self.p)**2*self.grid.ddp)
+	
+	def getpR(self): 
+		# Get <psi|p|psi>
+		return sum((self.grid.p<0)*abs(self.p)**2*self.grid.ddp)
+		
+	def getxstd(self): 
+		# Get <psi|p|psi>
+		return np.sqrt(sum(self.grid.x**2*abs(self.x)**2*self.grid.ddx)-self.getx()**2)
 
 	def getMomentum(self,xp,q):
 		# Get sum |<psi|psi>|^2q
@@ -195,11 +230,7 @@ class WaveFunction:
 		return xL
 
 	def getxM(self,x1,x2):
-		xM=0.0
-		for i in range(0,self.grid.N):
-			if (self.grid.x[i]>x1 and self.grid.x[i]<x2):
-				xM=xM+abs(self.x[i])**2
-		return xM
+		return np.sum(np.abs(self.x)**2*self.grid.ddx*np.array(self.grid.x>x1,dtype=float)*np.array(self.grid.x<x2,dtype=float))
 	
 	def save(self,datafile):
 		# Export both x/p representation in 'datafile.npz'

@@ -12,9 +12,9 @@ module purge
 module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
-nruns=179
-name=e0d40-g0d31
-wdir=/tmpdir/p0110mm/cat-LCAR/SPECTRUM-${SLURM_JOB_ID}-$name
+nruns=719
+name=K0d3
+wdir=/tmpdir/p0110mm/kicked-rotor/SPECTRUM-${SLURM_JOB_ID}-$name
 inputfile=input/$name
 
 python3 spectrum.py initialize $wdir/

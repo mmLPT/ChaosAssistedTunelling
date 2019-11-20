@@ -4,7 +4,6 @@ from utils.quantum.husimi import *
 from utils.quantum.wavefunction import *
 from utils.quantum.quantumoperator import *
 from utils.toolsbox import *
-import utils.plot.read as read
 
 # This scripts contains functions that are usable with any system
 

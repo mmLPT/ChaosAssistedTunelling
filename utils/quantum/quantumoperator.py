@@ -93,21 +93,22 @@ class QuantumTimePropagator(QuantumOperator):
 		self.dt=self.T0/self.idtmax # time step
 		self.beta=beta # quasi-momentum
 		self.mu=mu # 'mass'
+		self.randomphase=randomphase
 		
 		# In order to gain time in propagation, we pre-compute 
 		# splitted propagator that appears to be constant most of time
 		# NB: if you have non interactions terms, this doesn't work
 		self.Up=np.zeros(self.N,dtype=np.complex_)
 		if randomphase:
-			self.Up=np.exp(-1j*(np.random.rand(self.N)*2*np.pi)/2.0*self.dt)
+			self.Up=np.exp(-1j*(np.random.rand(self.N)*2*np.pi)*self.dt)
 		else:
 			self.Up=np.exp(-(1j/grid.h)*((grid.p-self.beta)**2/(self.mu*4))*self.dt)
+			# ~ self.Up=np.exp(-(1j/grid.h)*((grid.p-self.beta)**2/(self.mu*2))*self.dt)
 		
 
 		self.Ux=np.zeros((self.idtmax,self.N),dtype=np.complex_)
 		if self.idtmax==1:
-			for idt in range(0,self.idtmax):
-				self.Ux[idt]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x))*self.dt)
+			self.Ux[0]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x))*self.dt)
 		else:
 			for idt in range(0,self.idtmax): 
 				self.Ux[idt]=np.exp(-(1j/grid.h)*(self.potential.Vx(grid.x,idt*self.dt))*self.dt)
@@ -120,6 +121,32 @@ class QuantumTimePropagator(QuantumOperator):
 			wf.x=wf.x*self.Ux[idt]
 			wf.x2p() 
 			wf.p=wf.p*self.Up  
+			
+	def propagatequater(self,wf):
+		# Propagate over one period/kick/arbitray time 
+		for idt in range(0,int(self.idtmax/4)):
+			wf.p=wf.p*self.Up 
+			wf.p2x() 
+			wf.x=wf.x*self.Ux[idt]
+			wf.x2p() 
+			wf.p=wf.p*self.Up  
+			
+	def propagatequater2(self,wf):
+		# Propagate over one period/kick/arbitray time 
+		for idt in range(int(self.idtmax/4)-1,self.idtmax):
+			wf.p=wf.p*self.Up 
+			wf.p2x() 
+			wf.x=wf.x*self.Ux[idt]
+			wf.x2p() 
+			wf.p=wf.p*self.Up
+			
+	def propagateRandom(self,wf):
+		# Propagate over one period/kick/arbitray time 
+		for idt in range(0,self.idtmax):
+			wf.p=wf.p*self.Up 
+			wf.p2x() 
+			wf.x=wf.x*self.Ux[idt]
+			wf.x2p() 
 			
 	def propagateGP(self,wf,g):
 		# Propagate over one period/kick/arbitray time with interactions
@@ -134,12 +161,23 @@ class QuantumTimePropagator(QuantumOperator):
 		# Propagate N dirac in x representation, to get matrix representation
 		# of the quantum time propagator
 		self.Mrepresentation="x"
-		for i in range(0,self.N):
-			wf=WaveFunction(self.grid)
-			wf.setState("diracx",i0=i,norm=False) #Norm false to produce 'normalized' eigevalue
-			self.propagate(wf)
-			wf.p2x()
-			self.M[:,i]=wf.x 
+		if self.randomphase:
+			for i in range(0,self.N):
+				wf=WaveFunction(self.grid)
+				wf.setState("diracx",i0=i,norm=False) #Norm false to produce 'normalized' eigevalue
+				self.propagateRandom(wf)
+				wf.p2x()
+				self.M[:,i]=wf.x 
+		else:
+			for i in range(0,self.N):
+				wf=WaveFunction(self.grid)
+				wf.setState("diracx",i0=i,norm=False) #Norm false to produce 'normalized' eigevalue
+				self.propagate(wf)
+				wf.p2x()
+				self.M[:,i]=wf.x
+				
+	def getxbraket(wf1,wf2):
+		return np.matmul(np.conjugate(wf1),np.matmul(self.M,wf2)) 
 			
 class CATFloquetOperator(QuantumTimePropagator):
 	# This class is specific for CAT purpose:
@@ -172,6 +210,11 @@ class CATFloquetOperator(QuantumTimePropagator):
 			for i in range(0,self.N):
 				orderedOverlaps[i]=overlaps[ind[i]]
 			return ind, orderedOverlaps
+			
+	def getOrderedQE(self):
+		# Check overlaps with a given wave function
+		# Returns the index of ordered overlaps and the overlaps
+			return np.argsort(self.qE)
 			
 	def getTunnelingPeriodBetween(self,i1,i2):		
 		return 2*np.pi*self.h/(self.T0*(abs(self.diffqE1qE2(i1,i2))))
@@ -231,9 +274,40 @@ class CATFloquetOperator(QuantumTimePropagator):
 		s[self.N-1]=np.abs(self.diffqE1qE2(ind[self.N-1],ind[0]))/(2*np.pi*self.h/(self.N*self.T0))
 		return s
 		
+	def getSpacingDistribution2(self,bins=50):
+		ind1=np.argsort(self.qE)
+		symX=np.zeros(self.N,dtype=bool)
+		for i in range(0,self.N):
+			symX[i]=self.eigenvec[ind1[i]].isSymetricInX()
+			
+		s=np.zeros([])
+		for ind2 in [np.nonzero(symX)[0],np.nonzero(np.invert(symX))[0]]:
+			print(ind1,ind2)
+			for i in range(0,len(ind2)-1):
+				# ~ a=np.abs(self.diffqE1qE2(ind[i],ind[i+1]))/(2*np.pi*self.h/(len(ind)*self.T0))
+				a=np.abs(self.diffqE1qE2(ind1[ind2[i]],ind1[ind2[i+1]]))/(2*np.pi*self.h/(len(ind2)*self.T0))
+				print(len(ind2),a)
+				s=np.append(s,a)
+			s=np.append(s,np.abs(self.diffqE1qE2(ind1[ind2[len(ind2)-1]],ind1[ind2[0]]))/(2*np.pi*self.h/(len(ind2)*self.T0)))
+		return np.histogram(s, bins=bins,density=True)
+			
+		
 	def getFormFactor(self,it):
-		n=int(it*self.N)
-		return abs(sum(self.eigenval**n))**2/self.N			
+		n=int(it)
+		return abs(np.sum(self.eigenval**n))**2/self.N		
+		
+	def getBallisticSpeed(self,Ncell,x0):
+		wf0=WaveFunction(grid)
+		wf0.setState("coherent",x0=x0,xratio=2.0)
+		v=0.0
+		for i in range(1,int(0.5*(Ncell-1))):
+			xi=x0+i*2*np.pi
+			wfi=WaveFunction(grid)
+			wfi.setState("coherent",x0=xi,xratio=2.0)
+			v=v+i**2*np.abs(self.getxbraket(wf0,wfi))**2
+		return np.sqrt(v)
+		
+		
 		
 # Work In Progress # ------------------------------------------------- #
 

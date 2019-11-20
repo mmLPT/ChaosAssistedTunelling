@@ -6,8 +6,6 @@ from utils.classical.stroboscopic import *
 from utils.mathtools.periodicfunctions import *
 from utils.systems.potential import *
 from utils.quantum.husimi import *
-import utils.plot.read as read
-from utils.plot.latex import *
 from utils.toolsbox import *
 
 # This script contains:  4 classes and 4 functions
@@ -24,12 +22,8 @@ class PotentialMP(Potential):
 		
 		self.a1=getFourierCoefficient("a",1,self.f)
 		self.b1=getFourierCoefficient("b",1,self.f)
-		if gamma==0:
-			self.d1=0.0
-			self.x0=1.25
-		else:
-			self.d1=0.0#(self.gamma-0.25)/(self.e*self.gamma)
-			self.x0=self.R1()
+		self.d1=(self.gamma-0.25)/(self.e*self.gamma)
+		self.x0=self.R1()
 		
 	def Vx(self,x,t=np.pi/2.0):
 		return -self.gamma*(1+self.e*self.f(t))*np.cos(x)
@@ -39,20 +33,6 @@ class PotentialMP(Potential):
 		
 	# The 4 following functions comes from classical analysis fo the bifurcation
 	# they make possible to acess equilibrium positions for a given modulation waveform
-	def R1(self):
-		if self.d1>-0.5*np.sqrt(self.a1**2+self.b1**2):
-			v=8.0/self.gamma*self.e*(0.5*np.sqrt(self.a1**2+self.b1**2)+self.d1)*self.gamma
-		else:
-			v=0.0
-		return np.sqrt(v)
-		
-	def R2(self):
-		if self.d1>0.5*np.sqrt(self.a1**2+self.b1**2):
-			v=8.0/self.gamma*self.e*(-0.5*np.sqrt(self.a1**2+self.b1**2)+self.d1)*self.gamma
-		else:
-			v=0.0
-		return np.sqrt(v)
-	
 	def thetaR1(self):
 		if self.a1==0:
 			v=0.25*np.pi*self.b1/abs(self.b1)
@@ -60,13 +40,30 @@ class PotentialMP(Potential):
 			v=0.5*np.arctan(self.b1/self.a1)
 		else:
 			v=0.5*np.arctan(self.b1/self.a1)+0.5*np.pi
-		return v
+		return np.arctan2(np.sin(v)/2,np.cos(v))
 		
 	def thetaR2(self):
-		return self.thetaR1()+np.pi/2.0
+		if self.a1==0:
+			v=0.25*np.pi*self.b1/abs(self.b1)
+		elif self.a1>0.0:
+			v=0.5*np.arctan(self.b1/self.a1)
+		else:
+			v=0.5*np.arctan(self.b1/self.a1)+0.5*np.pi
+		return np.arctan2(np.sin(v+np.pi/2)/2,np.cos(v+np.pi/2))
 		
-	def getParams(self):
-		return self.e, self.gamma, self.x0
+	def R1(self):
+		if self.d1>-0.5*np.sqrt(self.a1**2+self.b1**2):
+			v=8.0/self.gamma*self.e*(0.5*np.sqrt(self.a1**2+self.b1**2)+self.d1)*self.gamma
+		else:
+			v=0.0
+		return np.sqrt(v*(np.cos(self.thetaR1())**2+np.sin(self.thetaR1())**2/4))
+		
+	def R2(self):
+		if self.d1>0.5*np.sqrt(self.a1**2+self.b1**2):
+			v=8.0/self.gamma*self.e*(-0.5*np.sqrt(self.a1**2+self.b1**2)+self.d1)*self.gamma
+		else:
+			v=0.0
+		return np.sqrt(v*(np.cos(self.thetaR2())**2+np.sin(self.thetaR2())**2/4))
 
 		
 class PotentialMPasym(PotentialMP):

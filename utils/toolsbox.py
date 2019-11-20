@@ -2,7 +2,7 @@ import numpy as np
 
 
 def strint(i):
-	return "{:05d}".format(int(i))
+	return "{:04d}".format(int(i))
 
 def getg(h):
 			
@@ -28,6 +28,7 @@ def convert2theory(s,nu,x0exp=0.0):
 	m=86.909180527*u 
 	d=532.0 #e-9
 	nuL=(np.pi*hbar)/(m*d**2)*10**(11)
+	print(nuL)
 	gamma=s*(nuL/nu)**2
 	heff=2*(nuL/nu)
 	x0=x0exp*np.pi/90.0

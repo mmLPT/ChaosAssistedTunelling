@@ -41,8 +41,12 @@ if mode=="compute":
 	if runid==0: # This generate and parameters files in the working directory with read input (to avoid surprises)		
 		np.savez(wdir+"params",alpha=alpha,N=N,nruns=nruns)
 
-	pot=PotentialST(alpha)
+	# ~ pot=PotentialST(alpha)
+	# ~ grid=Grid(N,h=2*np.pi,xmax=2*np.pi)
+	pot=PotentialGG(np.pi/2.0,alpha)
 	grid=Grid(N,h=2*np.pi,xmax=2*np.pi)
+	# ~ pot=PotentialTR(alpha)
+	# ~ grid=Grid(Ninfo[0,runid],h=2*np.pi/Ninfo[0,runid],xmax=2*np.pi)
 
 	fo=CATFloquetOperator(grid,pot,randomphase=True)
 	fo.diagonalize()
@@ -73,13 +77,15 @@ if mode=="plot":
 	N=int(data['N'])
 	alpha=data['alpha']
 	data.close()
+	
+	smax=5.0
 
 	ax=plt.gca()
 	ax.set_xlabel(r"s")
 	ax.set_ylabel(r"P(s)")
-	ax.set_xlim(0.0,2.0)
+	ax.set_xlim(0.0,smax)
 	ax.set_title(r"$N={:.0f} \quad \alpha={:.2f} \quad nruns={:.0f}$".format(N,alpha,nruns))
-	plt.hist(s, range = (0, 2.5), bins = int(nruns/10),density=True)
+	plt.hist(s, range = (0, 1.05*smax), bins = int(nruns/10),density=True)
 	plt.savefig(wdir+"sd.png", bbox_inches = 'tight',format="png")
 
 				

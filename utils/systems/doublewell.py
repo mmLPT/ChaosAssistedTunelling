@@ -10,44 +10,37 @@ from utils.systems.potential import *
 
 
 class PotentialDW(Potential):
-	def __init__(self,alpha0,x1,alpha1):
+	def __init__(self,e,gamma,f=np.cos,idtmax=1000):
 		Potential.__init__(self)
-		self.alpha0=alpha0
-		self.x0=np.pi/2.0
-		self.alpha1=alpha1
-		self.x1=x1
-		self.Tx=2*np.pi #spatial period
-		self.isTimeDependent=False
+		self.T0=4*np.pi
+		self.idtmax=idtmax
+		self.x0=np.pi/2
+		self.e=e
+		self.gamma=gamma
+		self.f=f 
 		
-	@property
-	def x0(self):
-		return self._x0
 		
-	@x0.setter
-	def x0(self, value):
-		self._x0 = value
-		
-	def Vx(self,x):
-		return self.alpha0*(self.xmodt(x)**2-self.x0**2)**2+self.Vxasym(x)
-		
-	def dVdx(self,x):
-		return 2*self.alpha0*(self.xmod(x)**2-self.x0**2)*2*self.xmod(x)+self.dVdxasym(x)
+	def Vx(self,x,t=np.pi/2.0):
+		return -self.gamma*(1+self.e*self.f(t))*(x**2-self.x0**2)*x**2/(np.pi)**3
 	
-	def Vxasym(self,x):
-		return self.alpha1*(x-self.x1)
-		
-	def dVdxasym(self,x):
-		return self.alpha1
-		
-	def xmod(self,x):
-		x=x%self.Tx
-		if x>self.Tx/2.0:
-			x=x-self.Tx
-		return x
+	def dVdx(self,x,t=np.pi/2.0):
+		return self.gamma*(1+self.e*self.f(t))*(2*x**2-self.x0**2)*2*x/(np.pi)**3
 	
-	def xmodt(self,x):
-		for i in range(0,x.shape[0]):
-			x[i]=self.xmod(x[i])
-		return x
+	# ~ def Vxasym(self,x):
+		# ~ return self.alpha1*(x-self.x1)
+		
+	# ~ def dVdxasym(self,x):
+		# ~ return self.alpha1
+		
+	# ~ def xmod(self,x):
+		# ~ x=x%self.Tx
+		# ~ if x>self.Tx/2.0:
+			# ~ x=x-self.Tx
+		# ~ return x
+	
+	# ~ def xmodt(self,x):
+		# ~ for i in range(0,x.shape[0]):
+			# ~ x[i]=self.xmod(x[i])
+		# ~ return x
 
 	
