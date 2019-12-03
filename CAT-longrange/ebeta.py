@@ -9,6 +9,7 @@ from utils.quantum import *
 from utils.classical import *
 from utils.systems.modulatedpendulum import *
 from scipy.linalg import expm, sinm, cosm
+from utils.mathtools.periodicfunctions import *
 
 
 # State: stable [22/02/2019]
@@ -68,6 +69,7 @@ if mode=="compute":
 	# Create and diag the Floquet operator
 	grid=Grid(N,h)
 	beta=np.linspace(-0.5,0.5,nruns)[runid]*h
+	mod=PeriodicFunctions()
 	pot=PotentialMP(e,gamma)
 	fo=CATFloquetOperator(grid,pot,beta=beta)
 	fo.diagonalize()
@@ -128,104 +130,127 @@ if mode=="plot":
 	beta=data['beta']
 	qEs=data['qEs']
 	overlaps=data['overlaps']
-	nruns=data['nruns']
+	nruns=int(data['nruns'])
 	symX=data['symX']
 	data.close()
+	
+	beta=beta[:,-1]/h[:,-1]
+	qEs=qEs[:,-1]
+	
+	beta=beta*2*np.pi
+	dbeta=np.abs(beta[0]-beta[1])
+	
+	print(dbeta)
+	
+	nfft=nruns/2
+	V=np.fft.rfft(qEs)/nruns
+	# ~ V=np.fft.fftshift(V)
+	X=np.arange(V.size)
+	
+	vint=np.sqrt(np.trapz((np.gradient(qEs,beta))**2,dx=dbeta)/(h[0,0]**2*2*np.pi))
+	vcoupling=np.sqrt(2*np.sum(X**2*np.abs(V)**2))/h[0,0]
+	print("1/h=",1/h[0,-1])
+	print("vint={:.2E}".format(float(vint)))
+	print("vcoupling={:.2E}".format(float(vcoupling)))
+	print(vint/vcoupling)
 
 	# General setup for plotting
 	ax=plt.gca()
 	ax.set_xlabel(r"$\beta$")
 	ax.set_ylabel(r"$qE/h$")
-	# ~ ax.set_title(r"$\varepsilon={:.3f} \quad \gamma={:.3f}$".format(e,gamma))
-	ax.set_xlim(-0.5,0.5)
+	ax.set_xlim(-np.pi,np.pi)
+	emin=np.min(qEs)
+	emax=np.max(qEs)
+	dE=0.2*(emax-emin)
+	ax.set_ylim(emin-dE,emax+dE)
+	# ~ print(2*np.min(qEs),2*np.max(qEs))
 
-	cmap = plt.cm.get_cmap('Reds')
-
-	overlaps=np.abs(overlaps)
-
-	# ~ qEs=4*np.pi*(qEs/h)/np.pi
+	ax.plot(beta,qEs,c="tab:blue")
+	# ~ ax.plot(beta,np.fft.irfft(V)*nruns,c="tab:red")
 	
-
-	ind=np.argmax(overlaps,axis=1)
-
-	n=nruns
-	beta2=np.zeros(n)
-	qEs2=np.zeros(n)
-	for i in range(0,n):
-		j=np.argmax(overlaps[i])
-		beta2[i]=beta[i,j]/h[0,0]
-		qEs2[i]=qEs[i,j]
-		
+	data=np.load("tempdata/states.npz")
+	beta0=data['beta']
+	qEs0=data['qEs']
+	data.close()
 	
+	V0=np.fft.rfft(qEs0)
+	print(np.abs(V0)**2)
+	# ~ print(np.abs(V)**2)
 
+	# ~ print(np.fft.irfft(np.fft.rfft(qEs0), 2*len(V0)-1))
 	
-	plt.scatter(beta2,qEs2)
+	ax.plot(beta0,np.fft.irfft(np.fft.rfft(qEs0), 2*len(V0)-1),c="tab:red")
+	ax.scatter(beta0,qEs0,c="tab:red",zorder=4)
+	
+	
+	
+	
 	plt.savefig(wdir+"spectrum.png", bbox_inches='tight',dpi=250) 
 	
 	ax.clear()
-	
+	ax=plt.gca()
+	ax.set_xlabel(r"$n$")
+	ax.set_ylabel(r"$Vn$")
+	ax.set_xlim(0,15)
+	ax.set_yscale("log")
+	# ~ ax.set_ylim(10**(-17),10**(-7))
 
+	plt.scatter(X,np.abs(V/h[0,0])**2,c="blue")
+	plt.plot(X,np.abs(V/h[0,0])**2,c="blue")
 	
-	n2=n
-	# ~ V=np.zeros(n2,dtype=complex)
-	# ~ for i in range(0,n2):
-		# ~ V[i]=np.sum(np.exp(-1j*2*np.pi*beta2*i)*qEs2)/n*4*np.pi/h[0,0]
-		
-	V2=np.fft.fft(qEs2)/n*4*np.pi/h[0,0]
+	plt.scatter(X,X**2*np.abs(V/h[0,0])**2,c="red")
+	plt.plot(X,X**2*np.abs(V/h[0,0])**2,c="red")
+
+	plt.savefig(wdir+"V.png", bbox_inches='tight',dpi=250)
 	
 	
-	Nc=36*10
-	M=np.zeros((Nc,Nc),dtype=np.complex_)
-	for i in range(0,Nc):
-		for j in range(0,Nc):
-			l=int(min(np.abs(i-j),np.abs(Nc+i-j)))
-			if i>j:
-				M[i,j]=V2[l]
-			else:
-				M[i,j]=np.conjugate(V2[l])
-			# ~ M[i,j]=np.exp(-3*l)
-			
-	# ~ U=expm(-1j*M)
-	# ~ U=np.linalg.matrix_power(U,5)
-	# ~ V3=np.zeros(Nc,dtype=complex)	
+	
+	#changer ce h[0,0] qui n'a aucun sens
+	
+	
+	# ~ Nc=36*10
+	# ~ M=np.zeros((Nc,Nc),dtype=np.complex_)
 	# ~ for i in range(0,Nc):
-		# ~ V3[i]=U[0,i]
+		# ~ for j in range(0,Nc):
+			# ~ l=int(min(np.abs(i-j),np.abs(Nc+i-j)))
+			# ~ if i>j:
+				# ~ M[i,j]=V2[l]
+			# ~ else:
+				# ~ M[i,j]=np.conjugate(V2[l])
 		
 	
 		
 	
 	
-	ax.set_xlabel(r"$i$")
-	ax.set_ylabel(r"$|\langle n | \mathcal{H} | n+1 \rangle|^2$")
+	# ~ ax.set_xlabel(r"$i$")
+	# ~ ax.set_ylabel(r"$|\langle n | \mathcal{H} | n+1 \rangle|^2$")
 	
 	# ~ ax.set_xlim(0,n2)
 	
-	mx=np.arange(n2)
+	# ~ mx=np.arange(n2)
 	# ~ plt.scatter(mx,(np.abs(V))**2)
 	
 	# ~ plt.plot(np.arange(V2.size),np.abs(V2)**2,c='blue',zorder=0)
 	# ~ plt.scatter(np.arange(V2.size),np.abs(V2)**2,c="red",s=5.0**2,zorder=1)
 	
-	U0=expm(-1j*M)
-	for j in range(0,5):
-		print(1+5*j)
-		U=np.linalg.matrix_power(U0,1+5*j)
-		V3=np.zeros(Nc,dtype=complex)	
-		for i in range(0,Nc):
-			V3[i]=U[0,i]
-		plt.plot(np.arange(V3.size),np.abs(V3)**2,zorder=0)
-		plt.scatter(np.arange(V3.size),np.abs(V3)**2,s=5.0**2,zorder=1)
+	# ~ U0=expm(-1j*M)
+	# ~ for j in range(0,5):
+		# ~ print(1+5*j)
+		# ~ U=np.linalg.matrix_power(U0,1+5*j)
+		# ~ V3=np.zeros(Nc,dtype=complex)	
+		# ~ for i in range(0,Nc):
+			# ~ V3[i]=U[0,i]
+		# ~ plt.plot(np.arange(V3.size),np.abs(V3)**2,zorder=0)
+		# ~ plt.scatter(np.arange(V3.size),np.abs(V3)**2,s=5.0**2,zorder=1)
 	
-	ax.set_yscale('log')
+	# ~ ax.set_yscale('log')
 	
-	ax.set_ylim(10**(-8),1)
-	ax.set_xlim(0,25)
-	# ~ for i in range(0,15):
-		
+	# ~ ax.set_ylim(10**(-8),1)
+	# ~ ax.set_xlim(0,25)
 
 	
-	ax.grid()		
+	# ~ ax.grid()		
 				
-	plt.savefig(wdir+"V.png", bbox_inches='tight',dpi=250) 
+	# ~ plt.savefig(wdir+"V.png", bbox_inches='tight',dpi=250) 
 	
 

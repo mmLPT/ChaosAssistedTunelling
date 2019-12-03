@@ -46,6 +46,7 @@ if mode=="compute":
 	description=data['description']  
 
 	Ncell=int(data['Ncell'])
+	Npcell=int(data['Npcell'])
 	e=data['e']
 	gamma=data['gamma']
 	x0=data['x0'] 
@@ -56,7 +57,7 @@ if mode=="compute":
 
 	data.close()
 	
-	N=Ncell*128
+	N=Ncell*Npcell
 	time=np.linspace(0.0,2.0*iperiod,num=iperiod,endpoint=False)
 	
 

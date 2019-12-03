@@ -22,7 +22,10 @@ class PotentialMP(Potential):
 		
 		self.a1=getFourierCoefficient("a",1,self.f)
 		self.b1=getFourierCoefficient("b",1,self.f)
-		self.d1=(self.gamma-0.25)/(self.e*self.gamma)
+		if self.e==0:
+			self.d1=0
+		else:
+			self.d1=(self.gamma-0.25)/(self.e*self.gamma)
 		self.x0=self.R1()
 		
 	def Vx(self,x,t=np.pi/2.0):

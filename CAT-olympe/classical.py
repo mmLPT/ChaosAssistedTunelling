@@ -58,9 +58,11 @@ if mode=="compute":
 	s,nu,x0exp=convert2exp(gamma,h)
 	iperiod=data['iperiod']
 	iperiod=10000
-	phase=1.75*np.pi
-	X0=-1
-	Y0=1.17
+	phase=1*np.pi
+	phase=0.0
+	X0=3.14
+	Y0=0.77
+	rotated=False
 
 	data.close() # close file
 	
@@ -78,7 +80,7 @@ if mode=="compute":
 	pot=PotentialMP(e,gamma,f=mod.cos)
 	# ~ pot=PotentialDW(e,gamma)
 	cp=ClassicalContinueTimePropagator(pot)
-	pp=PhasePortrait(iperiod,ny0,cp,xmax=np.pi,pmax=2.5,theta1=pot.thetaR1(),theta2=pot.thetaR2(),X0=X0,Y0=Y0) 
+	pp=PhasePortrait(iperiod,ny0,cp,xmax=np.pi,pmax=2.5,theta1=pot.thetaR1(),theta2=pot.thetaR2(),X0=X0,Y0=Y0,rotated=rotated) 
 	
 
 	# Generate and save a trajectory
@@ -136,52 +138,36 @@ if mode=="plot":
 	cmap=plt.get_cmap("jet")
 
 	data=np.load(wdir+"all-trajectories.npz")
-	# ~ x=data["x"].flatten()
-	# ~ p=data["p"].flatten()
-	# ~ sc=data["sc"].flatten()
 	x=data["x"]
 	p=data["p"]
 	sc=data["sc"]
 	sc=sc/np.max(sc)
-	print(x.shape)
 	data.close()
 	
 	
-	mod=PeriodicFunctions(phase=phase)
-	pot=PotentialMP(e,gamma,f=mod.cos)
-	cp=ClassicalContinueTimePropagator(pot)
-	pp=PhasePortrait(iperiod,ny0,cp,xmax=np.pi,pmax=2.5,theta1=pot.thetaR1(),theta2=pot.thetaR2(),X0=X0,Y0=Y0)
-	
-	plt.scatter(pot.R1()*np.cos(pot.thetaR1()),pot.R1()*np.sin(pot.thetaR1()))
+	# ~ mod=PeriodicFunctions(phase=phase)
+	# ~ pot=PotentialMP(e,gamma,f=mod.cos)
+	# ~ cp=ClassicalContinueTimePropagator(pot)
+	# ~ pp=PhasePortrait(iperiod,ny0,cp,xmax=np.pi,pmax=2.5,theta1=pot.thetaR1(),theta2=pot.thetaR2(),X0=X0,Y0=Y0)
+	# ~ plt.scatter(pot.R1()*np.cos(pot.thetaR1()),pot.R1()*np.sin(pot.thetaR1()))
 	# ~ plt.scatter(pot.R1()*np.cos(pot.thetaR2()),pot.R1()*np.sin(pot.thetaR2()))
-	
 	# ~ for i in range(0,ny0):
 		# ~ y=pp.generatey0(i)
 		# ~ plt.scatter(y[0],y[1],c="red")
 	
+	# ~ condreg=sc<0.5	
+	# ~ condchaotic=sc>0.5
+	# ~ plt.scatter(x[condreg],p[condreg],s=0.02**2,c="blue")
+	# ~ plt.scatter(x[condchaotic],p[condchaotic],s=0.02**2,c="red")
+	
+	# ~ cmap = plt.cm.get_cmap('RdBu')
+	# ~ plt.scatter(x.flatten(),p.flatten(),s=0.02**2,c=cmap(sc.flatten()))
+	
+
+	plt.scatter(x,p,s=0.02**2,c="black")
 	
 	fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
-	
-	# ~ plt.scatter(x,p,c=plt.cm.get_cmap('bwr')(sc),s=0.015**2)
-	# ~ plt.scatter(x,p,c="blue",s=0.015**2)
-	
-	cond=sc>0.5	
-	xchaotic=np.extract(cond,x)
-	pchaotic=np.extract(cond,p)
-	xreg=np.extract(1-cond,x)
-	preg=np.extract(1-cond,p)
-	
-	plt.scatter(xchaotic,pchaotic,s=0.02**2,c="red")
-	plt.scatter(xreg,preg,s=0.02**2,c="blue")
-	
-	# ~ plt.scatter(xchaotic,pchaotic,s=0.1**2,c="red")
-	# ~ plt.scatter(xreg,preg,s=0.1**2,c="blue")
-	
-	# ~ plt.show()
-		
-
-	plt.savefig(wdir+"phase-portrait2.png",dpi=500)
-	# ~ plt.savefig(wdir+"phase-portrait.eps", bbox_inches = 'tight',format="eps")
+	plt.savefig(wdir+"phase-portrait.png",dpi=500)
 	
 	
 if mode=="plot2":
@@ -256,13 +242,19 @@ if mode=="plot3":
 	ny0=data['ny0']
 	data.close()
 	
+	data=np.load(wdir+"all-trajectories.npz")
+	x=data["x"]
+	p=data["p"]
+	sc=data["sc"]
+	sc=sc/np.max(sc)
+	data.close()
+	
 	# General plotting setup
 	fig = latex.fig(columnwidth=345.0,wf=1.0)
+	
 	ax = plt.gca()
 	ax.set_xlim(-np.pi,np.pi)
 	ax.set_ylim(-2.0,2.0)
-	# ~ ax.set_ylim(-np.pi,np.pi)
-	
 	ax.set_aspect('equal')
 	ax.set_xlabel(r"$x$")
 	ax.set_ylabel(r"$p$")
@@ -270,33 +262,12 @@ if mode=="plot3":
 	ax.set_xticklabels([r"-$\pi$",r"$-\pi/2$",r"$0$",r"$\pi/2$",r"$\pi$"])
 	ax.set_yticks([-np.pi/2,0,np.pi/2])
 	ax.set_yticklabels([r"$-\pi/2$",r"$0$",r"$\pi/2$"])
-	
-	
-	props = dict(boxstyle='square', facecolor='white', alpha=1.0)
-	prop = dict(arrowstyle="-|>,head_width=0.2,head_length=0.5",shrinkA=0,shrinkB=0,fc="black",lw=1.2)
-
 	ax.set_title(r"$t/T=0.875$")
 	
 	# Plotting the SPS
-	cmap=plt.get_cmap("jet")
-
-	data=np.load(wdir+"all-trajectories.npz")
-	x=data["x"]
-	p=data["p"]
-	sc=data["sc"]
-	sc=sc/np.max(sc)
-	print(x.shape)
-	data.close()
-	
-	
-	cond=sc>0.5	
-	xchaotic=np.extract(cond,x)
-	pchaotic=np.extract(cond,p)
-	xreg=np.extract(1-cond,x)
-	preg=np.extract(1-cond,p)
-	
-	
-	plt.scatter(xchaotic,pchaotic,s=0.01**2,c="red")
-	plt.scatter(xreg,preg,s=0.01**2,c="blue")
+	condreg=sc<0.5	
+	condchaotic=sc>0.5
+	plt.scatter(x[condreg],p[condreg],s=0.02**2,c="blue")
+	plt.scatter(x[condchaotic],p[condchaotic],s=0.02**2,c="red")
 
 	latex.save(wdir+"phase-portrait",form="png")

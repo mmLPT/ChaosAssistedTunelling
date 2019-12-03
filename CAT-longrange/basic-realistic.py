@@ -9,22 +9,22 @@ from utils.systems.modulatedpendulum import *
 from utils.systems.general import *
 from utils.systems.kickedrotor import *
 
-gamma=0.375
-e=0.24
-h=0.346
-x0=1.75
+# ~ gamma=0.375
+# ~ e=0.24
+# ~ h=0.346
+# ~ x0=1.75
 # ~ h=1/2.957
 # ~ h=1/2.591
-tmax=300
+# ~ tmax=10
 
-# ~ e=0.400
-# ~ gamma=0.32
-# ~ h=1/4.679
-# ~ x0=1.6
-# ~ tmax=200
+e=0.6
+gamma=0.15
+h=0.5
+x0=0
+tmax=50
 
 
-Ncell=251
+Ncell=51
 ncellini=13
 ncheck=5
 
@@ -82,6 +82,8 @@ xmax=30*2*np.pi
 	
 for i in range(0,itmax):
 	
+	
+	
 	for j in range(0,Ncell):
 		xL=x0+(j-0.5*(Ncell-1))*2*np.pi
 		wfL=WaveFunction(grid)
@@ -91,6 +93,8 @@ for i in range(0,itmax):
 		wfR=WaveFunction(grid)
 		wfR.setState("coherent",x0=xR,xratio=xratio)
 		probR[i,j]=np.abs(wf%wfR)**2
+	print(np.sum(probR[i,:]))
+		
 		
 	# ~ if i%icheck==0:
 		# ~ ax=plt.gca()
@@ -109,39 +113,49 @@ for i in range(0,itmax):
 	pL[i]=wf.getpL()
 	pR[i]=wf.getpR()
 	fo.propagatequater2(wf)
+	
+# ~ fo.propagatequater(wf)
+	
+# ~ ax=plt.gca()
+# ~ ax.plot(np.fft.fftshift(grid.p),np.fft.fftshift(np.abs(wf.p)**2))
+# ~ plt.show()
 		
 		
 ind=np.arange(Ncell)
 N0=(Ncell-1)*0.5
 n0=(ncellini-1)*0.5
 n1=5
-indIni=(ind>(N0-n0-1))*(ind<(N0+n0+1))
-indElse=(ind<(N0-n0))*(ind>(N0-n0-n1))+(ind>(N0+n0))*(ind<(N0+n0+n1))
-indElse=1-indIni
-print(indIni*np.arange(Ncell))
-print(indElse*np.arange(Ncell))
+indIni=np.logical_and(ind>(N0-n0-1),ind<(N0+n0+1))
+# ~ indElse=(ind<(N0-n0))*(ind>(N0-n0-n1))+(ind>(N0+n0))*(ind<(N0+n0+n1))
+indElse=np.logical_not(indIni)
+# ~ print(ind[indIni])
+# ~ print(ind[indElse])
+
+# ~ probL[:]=/np.sum(+probR[:])
+
+print(probL[:,indIni])
 
 probIni=np.zeros(itmax)	
 probElse=np.zeros(itmax)
 for i in range(0,itmax):
-	probIni[i]=np.sum(probL[i]*indIni+probR[i]*indIni)
-	probElse[i]=np.sum(probL[i]*indElse+probR[i]*indElse)
+	probIni[i]=np.sum(probL[i,indIni]+probR[i,indIni])
+	probElse[i]=np.sum(probL[i,indElse]+probR[i,indElse])
 	
 		
 
 	
 	
-ax=plt.subplot(3,1,1)
+# ~ ax=plt.subplot(3,1,1)
 
 # ~ ax.set_ylim(0.0,1.1)
-ax.set_xlim(0,np.max(time))
+# ~ ax.set_xlim(0,np.max(time))
 
-ini=indIni*np.arange(Ncell)
-for j in ini[ini.astype(bool)] :
-	print(j)
-	ax.plot(time,np.abs(probL[:,j])**2,label=str(j))
+# ~ ini=indIni*np.arange(Ncell)
+# ~ for j in ini[ini.astype(bool)] :
+	# ~ print(j)
+	# ~ ax.plot(time,np.abs(probL[:,j])**2,label=str(j))
 	# ~ ax.plot(time,np.abs(probR[:,j])**2,label=str(j))
-ax.grid()
+# ~ ax.grid()
 # ~ ax.legend()
 
 ax=plt.subplot(3,1,2)
@@ -151,11 +165,11 @@ ax.plot(time,probElse,c="red")
 ax.plot(time,probIni+probElse,c="green")
 ax.grid()
 
-ax=plt.subplot(3,1,3)
-ax.set_xlim(0,np.max(time))
-ax.plot(time,pL,c="blue")
-ax.plot(time,pR,c="red")
-ax.grid()
+# ~ ax=plt.subplot(3,1,3)
+# ~ ax.set_xlim(0,np.max(time))
+# ~ ax.plot(time,pL,c="blue")
+# ~ ax.plot(time,pR,c="red")
+# ~ ax.grid()
 
 np.savez("tempdata/46849-qm",xL=pL,xR=pR,time=time)
 

@@ -13,7 +13,7 @@ module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
 nruns=179
-name=e0d05-g0d15
+name=e0d00-g0d15m
 wdir=/tmpdir/p0110mm/longrange/LONGRANGE-${SLURM_JOB_ID}-$name
 inputfile=input/$name
 

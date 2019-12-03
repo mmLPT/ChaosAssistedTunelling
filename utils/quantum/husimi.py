@@ -83,24 +83,17 @@ class Husimi:
 		
 		
 		fig = latex.fig(columnwidth=345.0,wf=1.0,hf=2.0/np.pi)
-		fig.set_frameon(False)
 		
 		# Generla settings : tile/axes
 		ax=plt.gca()
-		# ~ ax.set_ylim(-0.5*np.pi,0.5*np.pi)
-		ax.set_ylim(-2.0,2.0)
+		ax.set_ylim(-2,2)
 		ax.set_xlim(-max(self.x),max(self.x))
-		# ~ ax.set_xlim(-7.5*np.pi,7.5*np.pi)
 		ax.set_aspect('equal')
-		# ~ ax.set_xticks([-np.pi,-0.5*np.pi,0,0.5*np.pi,np.pi])
-		# ~ ax.set_xticklabels([r"$-\pi$",r"$-\pi/2$",r"$0$",r"$\pi/2$",r"$\pi$"])
-		# ~ ax.set_yticks([-0.5*np.pi,0,0.5*np.pi])
-		# ~ ax.set_yticklabels([r"$-\pi/2$",r"$0$",r"$\pi/2$"])
+		ax.set_xticks([-np.pi,-0.5*np.pi,0,0.5*np.pi,np.pi])
+		ax.set_xticklabels([r"$-\pi$",r"$-\pi/2$",r"$0$",r"$\pi/2$",r"$\pi$"])
+		ax.set_yticks([-0.5*np.pi,0,0.5*np.pi])
+		ax.set_yticklabels([r"$-\pi/2$",r"$0$",r"$\pi/2$"])
 		
-		ax.set_xticks([])
-		ax.set_yticks([])
-		ax.set_xticklabels([])
-		ax.set_yticklabels([])
 		if SPSclassbool==True:
 			img=mpimg.imread(SPSclassfile+".png")
 			for i in range(0,int(max(self.x)/np.pi)+1):
@@ -116,25 +109,47 @@ class Husimi:
 		plt.contourf(x,p,rho, levels=levels,cmap=cmap,alpha=0.5)
 		levels = np.linspace(mnlvl,1.0,6)	
 		# ~ levels = [0.10]
-		contours=plt.contour(x,p,rho, levels=levels,colors="k",linestyles="-",linewidths=1.5)
-		# ~ contours=plt.contour(x,p,rho, levels=levels,colors="k",linewidths=0.5)
+		# ~ contours=plt.contour(x,p,rho, levels=levels,colors="k",linestyles="-",linewidths=1.5)
+		contours=plt.contour(x,p,rho, levels=levels,colors="k",linewidths=0.5)
 		# ~ plt.clabel(contours, inline=True, fontsize=8)
 		# ~ plt.pcolormesh(x,p,rho, norm=norm,cmap=cmap)
+		
+		
+		# ~ dpx=np.sqrt(self.h)
+		# ~ xticks=[0]
+		# ~ x0=0
+		# ~ while(x0+dpx<self.xmax/2):
+			# ~ x0=x0+dpx
+			# ~ xticks=np.append(xticks,x0)
+			# ~ xticks=np.append(xticks,-x0)
 			
-		
-		# ~ ax.set_xticks(np.linspace(-self.xmax/2,self.xmax/2,int(self.xmax/np.sqrt(self.h)),endpoint=True),minor=True)
-		# ~ ax.set_xticks(np.linspace(-self.xmax/2,self.xmax/2,np.ceil(0.5*self.xmax/np.pi)+1,endpoint=True))
-		ax.set_yticks(np.linspace(-2.0,2.0,int(4.0/np.sqrt(self.h)),endpoint=True),minor=True)
-		# ~ ax.grid(which='minor', color="black",alpha=0.2)
-		# ~ ax.grid(which='major', color="red",alpha=1.0)
-		
-		props = dict(boxstyle='square', facecolor='white', alpha=1.0)
+		# ~ pticks=[0]
+		# ~ p0=0
+		# ~ while(p0+dpx<2):	
+			# ~ p0=p0+dpx
+			# ~ pticks=np.append(pticks,p0)
+			# ~ pticks=np.append(pticks,-p0)
 
-		# ~ ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,verticalalignment='top', bbox=props)
+			
+		# ~ ax.set_xticks(xticks,minor=True)
+		# ~ ax.set_yticks(pticks,minor=True)
+		# ~ ax.grid(which='minor', color="black",alpha=0.2)
 		
-		fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+		
+		# ~ props = dict(boxstyle='square', facecolor='white', alpha=1.0)
+
+		# ~ ax.text(0.50, 0.90, textstr, transform=ax.transAxes, fontsize=14,va='center',ha='center', bbox=props)
+		
+		ax.set_title(textstr)
+		
+		# ~ fig.set_frameon(False)
+		# ~ fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+		# ~ ax.set_xticks([])
+		# ~ ax.set_yticks([])
+		# ~ ax.set_xticklabels([])
+		# ~ ax.set_yticklabels([])
 
 		# Saving fig
-		latex.save(datafile,form="png",dpi=500,transparent=True,bbox_inches='')
+		latex.save(datafile,form="png",dpi=500,transparent=False,bbox_inches='')
 		plt.close(fig)
 	

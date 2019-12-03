@@ -9,6 +9,7 @@ from utils.toolsbox import *
 from utils.quantum import *
 from utils.classical import *
 from utils.systems.modulatedpendulum import *
+from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
 
 # State: stable [22/02/2019]
 
@@ -132,16 +133,20 @@ if mode=="plot":
 
 	# General setup for plotting
 	ax=plt.gca()
-	ax.set_xlabel(r"h")
+	ax.set_xlabel(r"1/h")
 	ax.set_ylabel(r"$qEs T/2\pi h $")
-	ax.set_title(r"$\varepsilon={:.2f} \quad \gamma={:.2f}$".format(e,gamma))
+	ax.set_title(r"$\varepsilon={:.3f} \quad \gamma={:.3f}$".format(float(e),float(gamma)))
 	ax.set_xlim(np.min(1/h),np.max(1/h))
+	# ~ ax.set_xlim(2.8,3)
 	ax.set_ylim(-0.5,0.5)
-	ax.grid()
+	ax.grid(which="major",lw=1)
+	ax.grid(which="minor",lw=0.1)
+	
 	
 	# Select qEs corresponding to states that overlaps significantly with "WKB" states
+	
+	condOverlaps=(overlaps>0.01)
 	overlaps=overlaps/np.max(overlaps)
-	condOverlaps=(overlaps>0.1)
 	qEs=qEs[condOverlaps!=0]
 	h=h[condOverlaps!=0]
 	overlaps=overlaps[condOverlaps!=0]
@@ -151,13 +156,23 @@ if mode=="plot":
 	# Colormap for symetric and antisymetric states
 	cmapSym = plt.cm.get_cmap('RdYlGn_r')
 	cmapAsym = plt.cm.get_cmap('Blues')
+	# ~ cmapAsym = plt.cm.get_cmap('RdYlGn_r')
+	# ~ cmapSym = plt.cm.get_cmap('Blues')
 	c=cmapSym(overlaps)
 	# Filling the color of each quasi-energy with colormp propoto overlaps
 	c[symX!=0]=cmapSym(overlaps[symX!=0]/np.max(overlaps[symX!=0])) 
 	c[symX!=1]=cmapAsym(overlaps[symX!=1]/np.max(overlaps[symX!=1])) 
+	
+	phase=4*np.pi*qEs[ind]/(h[ind]*2*np.pi)
+	
+	ax.xaxis.set_major_locator(MultipleLocator(0.5))
+	ax.yaxis.set_major_locator(MultipleLocator(0.1))
+	ax.xaxis.set_minor_locator(MultipleLocator(0.02))
+	ax.yaxis.set_minor_locator(MultipleLocator(0.02))
 
 	# Plot
-	plt.scatter(1/h[ind],4*np.pi*qEs[ind]/(h[ind]*2*np.pi),c=c[ind],s=1**2)
+	plt.scatter(1/h[ind],phase,c=c[ind],s=1**2)
+	plt.scatter(1/h[ind],phase+1,c=c[ind],s=1**2)
 
 	plt.savefig(wdir+"spectrum.png", bbox_inches='tight') 
 

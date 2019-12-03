@@ -10,13 +10,19 @@ from utils.systems.general import *
 from utils.toolsbox import *
 
 # Physical parameters
-s=28.2
-nu=81.11*10**3
-x0exp=20.0
-e=0.15
-gamma, h, x0 = convert2theory(s=s, nu=nu,x0exp=x0exp)
+# ~ s=13.0
+# ~ nu=47.666*10**3
+# ~ x0exp=51.6
+# ~ e=0.240
+# ~ gamma, h, x0 = convert2theory(s=s, nu=nu,x0exp=x0exp)
 
-tmax=200
+gamma=0.225
+e=0.59
+x0=28.6*np.pi/180*2
+h=0.3
+
+
+tmax=180
 
 print(convert2exp(gamma,h,x0))
 print(gamma,h,x0)
@@ -69,24 +75,37 @@ for it in range(0,itmax):
 		
 
 # 3 - Normalization
-norm=xR[0]+xL[0]+xM[0]
+norm=np.max(xR+xL+xM)
 xL=xL/norm
 xR=xR/norm
 xM=xM/norm
 
+np.savez("tempdata/te",xL=xL,xR=xR,time=time)
+np.savetxt("tempdata/te",(time,xL,xR), delimiter=' ') 
+
 # 4 - Output
-if savenpz:
-	np.savez(datafile,xL=xL,xR=xR,xM=xM,time=time,gamma=gamma,e=e,x0=x0,h=h)
 if plot:
 	
-	plt.plot(time,xL)
-	plt.plot(time,xR)
-	plt.plot(time,xM)
+	ax=plt.subplot(2,1,1)
+	plt.plot(time,xR,c="blue")
+	plt.plot(time,xL,c="red")
+	# ~ plt.plot(time,xM)
 	ax=plt.gca()
 	s,nu,x0exp=convert2exp(gamma,h,x0)
 	ax.set_title(r"$\varepsilon={:.3f} \quad \gamma={:.3f} \quad h={:.3f} \quad x0={:.1f}$".format(e,gamma,h,x0)+"\n"+r"$s={:.3f} \quad \nu={:.3f} kHz \quad x_0={:.1f}^o$".format(s,nu/10**3,x0exp))
 	ax.set_xlim(0,tmax)
 	ax.set_ylim(0.0,1.0)
+	
+	
+	ax=plt.subplot(2,1,2)
+	
+	tf=np.abs(np.fft.rfft(xL))+np.abs(np.fft.rfft(xR))
+	tf[0]=0
+	# ~ tf[0]=0.0
+	freq=np.fft.rfftfreq(time.size,d=time[1]-time[0])
+	ax.set_xlim(0,np.max(freq))
+	ax.plot(freq,tf)
 	plt.show()
+	
 
 

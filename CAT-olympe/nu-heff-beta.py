@@ -33,6 +33,8 @@ if mode=="compute":
 
 	# General physical parameters 
 	N=int(data['N'])
+	Ndbeta=data['Ndbeta'] # "number of cells" in initial states
+	ibeta=int(data['ibeta'])
 	e=data['e']
 	x0=data['x0']
 	gamma=data['gamma']
@@ -58,34 +60,37 @@ if mode=="compute":
 		np.savez(wdir+"params","w", description=description,N=N, e=e,gamma=gamma,x0=x0,hmin=hmin,hmax=hmax,nh=nh,iperiod=iperiod)
 
 	# Create array to store "Left" and "Right" observables
-	xR=np.zeros(iperiod)
-	xL=np.zeros(iperiod)
+	xR=np.zeros((ibeta,iperiod))
+	xL=np.zeros((ibeta,iperiod))
 
 	# Initialization of the grid for given h value
 	h=1.0/(np.linspace(1.0/hmax,1.0/hmin,nh)[runid])
 	
 	grid=Grid(N,h)
 	
-	# Create the Floquet operator
-	fo=CATFloquetOperator(grid,pot)
+	for ib in range(0,ibeta):
+		# Create the Floquet operator
+		dbeta=h/(3.0*Ndbeta) #  width of beta distribution
+		beta=np.random.normal(0, dbeta)
+		fo=CATFloquetOperator(grid,pot,beta=beta)
 
-	# Create the initial state: a coherent state localized in x0 with width = 2.0 in x
-	wf=WaveFunction(grid)
-	wf.setState("coherent",x0=x0,xratio=2.0)
+		# Create the initial state: a coherent state localized in x0 with width = 2.0 in x
+		wf=WaveFunction(grid)
+		wf.setState("coherent",x0=x0,xratio=2.0)
 
-	# Propagate the wavefunction over iperiod storing the observable every time
-	for i in range(0,iperiod):
-		xL[i]=wf.getxL()
-		xR[i]=wf.getxR()
-		fo.propagate(wf)
+		# Propagate the wavefunction over iperiod storing the observable every time
+		for i in range(0,iperiod):
+			xL[ib,i]=wf.getxL()
+			xR[ib,i]=wf.getxR()
+			fo.propagate(wf)
 
-	A=max(xR[0],xL[0])
-	xL=xL/A
-	xR=xR/A
-
-	np.savez(wdir+"trajectories/"+strint(runid),"w", xL = xL, xR=xR)
-
-
+		A=max(xR[ib,0],xL[ib,0])
+		xL[ib,:]=xL[ib,:]/A
+		xR[ib,:]=xR[ib,:]/A
+		
+	xL=np.mean(xL,axis=0)
+	xR=np.mean(xR,axis=0)
+	
 	time=2.0*np.linspace(0.0,1.0*iperiod,num=iperiod,endpoint=False)
 	ax=plt.gca()
 	ax.set_xlim(0,200)
@@ -95,6 +100,9 @@ if mode=="compute":
 	plt.plot(time,xL, c="red")
 	plt.plot(time,xR, c="blue")
 	plt.savefig(wdir+"pictures/"+strint(runid)+".png") 
+
+	np.savez(wdir+"trajectories/"+strint(runid),"w", xL = xL, xR=xR)
+
 
 if mode=="final":
 	data=np.load(wdir+"params.npz")
@@ -126,8 +134,8 @@ if mode=="final":
 
 	for ih in range(0,nh):
 		data=np.load(wdir+"trajectories/"+strint(ih)+".npz")
-		xL=data['xL']*np.exp(-time/1000)
-		xR=data['xR']*np.exp(-time/1000)
+		xL=data['xL']
+		xR=data['xR']
 		xLf=np.abs(np.fft.rfft(xL))
 		xRf=np.abs(np.fft.rfft(xR))
 		xLf[0]=0.0
@@ -147,7 +155,7 @@ if mode=="final":
 	omegamin=0.001
 	ax.set_ylim(omegamin,omegamax)
 
-	cmap = plt.get_cmap('Greys')
+	cmap = plt.get_cmap('RdBu')
 	plt.pcolormesh(X,Y,Z,cmap=cmap)
 
 	plt.savefig(wdir+"final-s.png",bbox_inches = 'tight',format="png",dpi=150) 
