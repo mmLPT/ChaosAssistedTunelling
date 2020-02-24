@@ -16,10 +16,10 @@ from utils.toolsbox import *
 # ~ e=0.240
 # ~ gamma, h, x0 = convert2theory(s=s, nu=nu,x0exp=x0exp)
 
-gamma=0.225
-e=0.59
-x0=28.6*np.pi/180*2
-h=0.3
+gamma=0.375
+e=0.24
+x0=51.3*np.pi/180*2
+h=1/2.5
 
 
 tmax=180
