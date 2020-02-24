@@ -13,7 +13,7 @@ module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
 nruns=1984
-name=GG-b0d1
+name=GG-b0d5
 inputfile=input/$name
 wdir=/tmpdir/p0110mm/multifractality/D2-$name-${SLURM_JOB_ID}
 

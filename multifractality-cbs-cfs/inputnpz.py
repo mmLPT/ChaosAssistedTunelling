@@ -3,11 +3,11 @@ sys.path.insert(0, '..')
 import numpy as np
 from utils.toolsbox import *
 
-inputfile="input/GG-b0d1"
+inputfile="input/GG-b0d5"
 
 N=128
 alpha=0.5
-beta=0.1
+beta=0.5
 
 potential="GG"
 
