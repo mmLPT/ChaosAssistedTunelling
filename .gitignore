@@ -1,7 +1,8 @@
 *.pyc
 **/__pycache__
 **/.directory
-
+**/tempdata
+**/input
 
 # data files
 *.png
