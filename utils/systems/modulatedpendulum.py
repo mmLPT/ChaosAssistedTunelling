@@ -11,7 +11,7 @@ from utils.toolsbox import *
 # This script contains:  4 classes and 4 functions
 
 class PotentialMP(Potential):
-	def __init__(self,e,gamma,f=np.cos,idtmax=1000):
+	def __init__(self,e,gamma,f=np.cos,idtmax=1000,Fb=0):
 		Potential.__init__(self)
 		self.T0=4*np.pi
 		self.idtmax=idtmax
@@ -19,6 +19,7 @@ class PotentialMP(Potential):
 		self.e=e
 		self.gamma=gamma
 		self.f=f # modulation waveform
+		self.Fb=Fb
 		
 		self.a1=getFourierCoefficient("a",1,self.f)
 		self.b1=getFourierCoefficient("b",1,self.f)
@@ -29,7 +30,7 @@ class PotentialMP(Potential):
 		self.x0=self.R1()
 		
 	def Vx(self,x,t=np.pi/2.0):
-		return -self.gamma*(1+self.e*self.f(t))*np.cos(x)
+		return -self.gamma*(1+self.e*self.f(t))*np.cos(x)+self.Fb*x/(2*np.pi)
 	
 	def dVdx(self,x,t=np.pi/2.0):
 		return self.gamma*(1+self.e*self.f(t))*np.sin(x)

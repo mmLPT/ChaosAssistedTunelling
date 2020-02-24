@@ -10,21 +10,19 @@ from utils.systems.potential import *
 
 
 class PotentialDW(Potential):
-	def __init__(self,e,gamma,f=np.cos,idtmax=1000):
+	def __init__(self,gamma,idtmax=1000):
 		Potential.__init__(self)
-		self.T0=4*np.pi
+		self.T0=1
 		self.idtmax=idtmax
 		self.x0=np.pi/2
-		self.e=e
 		self.gamma=gamma
-		self.f=f 
 		
 		
 	def Vx(self,x,t=np.pi/2.0):
-		return -self.gamma*(1+self.e*self.f(t))*(x**2-self.x0**2)*x**2/(np.pi)**3
+		return -self.gamma*(np.cos(x)-np.cos(2*x))
 	
 	def dVdx(self,x,t=np.pi/2.0):
-		return self.gamma*(1+self.e*self.f(t))*(2*x**2-self.x0**2)*2*x/(np.pi)**3
+		return self.gamma*(np.sin(x)-2*np.sin(2*x))
 	
 	# ~ def Vxasym(self,x):
 		# ~ return self.alpha1*(x-self.x1)

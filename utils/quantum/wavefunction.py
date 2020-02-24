@@ -94,6 +94,8 @@ class WaveFunction:
 		# Normalize <x|psi>
 		# /!\ don't forget the discretization
 		nrm=sum(abs(self.x)**2)*self.grid.ddx
+		print(nrm)
+		
 		self.x = self.x/np.sqrt(nrm)
 		
 	def shiftX(self,x0):

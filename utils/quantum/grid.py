@@ -15,11 +15,19 @@ class Grid:
 		self.xmax=xmax # Interval will be [-xmax2.0,xmax/2.0[
 		self.x,self.dx=np.linspace(-xmax/2.0,xmax/2.0,N,endpoint=False,retstep=True)
 		self.x=self.x+self.dx/2.0
-		self.p=np.fft.fftfreq(self.N,self.dx)*2*np.pi*self.h 	
+		self.p=np.fft.fftfreq(self.N,self.dx)*2*np.pi*self.h
 		self.dp=0.5*h/self.dx
 		self.ddx=(np.max(self.x)-np.min(self.x))/(self.N-1)
 		self.ddp=(np.max(self.p)-np.min(self.p))/(self.N-1)
 		#print("é",np.max(self.x)-np.min(self.x),self.N,self.ddx)
+		
+		
+		
+		self.dp=self.p[1]-self.p[0]
+		# ~ print(self.dp,self.h)
+		# ~ self.p=self.p+0.5*self.dp
+		
+		# ~ print(self.dp,self.p[1]-self.p[0])
 		
 		# A p-defined WaveFunction, don't know about x interval, only about 
 		# it width, then to center a p-defined wf, you have to multiply
