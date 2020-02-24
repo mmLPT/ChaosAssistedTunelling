@@ -151,6 +151,62 @@ if mode=="final":
 	plt.pcolormesh(X,Y,Z,cmap=cmap)
 
 	plt.savefig(wdir+"final-s.png",bbox_inches = 'tight',format="png",dpi=150) 
+	
+	
+if mode=="final-2":
+	data=np.load(wdir+"params.npz")
+	nh=int(data['nh'])
+	N=int(data['N'])
+	iperiod=int(data['iperiod'])
+	hmin=data['hmin']
+	hmax=data['hmax']
+	e=data['e']
+	gamma=data['gamma']
+	x0=data['x0']
+	data.close()
+	
+
+	hm=np.linspace(1.0/hmax,1.0/hmin,nh)
+	freq=np.fft.rfftfreq(iperiod,d=2.0)
+	time=2.0*np.linspace(0.0,1.0*iperiod,num=iperiod,endpoint=False)
+
+	tf=np.zeros((int(iperiod/2)+1,nh))
+
+	for ih in range(0,nh):
+		print(ih)
+		data=np.load(wdir+"trajectories/"+strint(ih)+".npz")
+		
+		xL=data['xL']
+		xR=data['xR']
+		xLf=np.abs(np.fft.rfft(xL))
+		xRf=np.abs(np.fft.rfft(xR))
+		xLf[0]=0.0
+		xRf[0]=0.0
+
+		tf[:,ih]=0.5*(xLf+xRf)
+	
+	tf=tf/np.max(tf)
+				
+	np.savez(wdir+"nu-heff-exp",hm=hm,freq=freq,tf=tf,N=N, e=e,gamma=gamma,x0=x0,iperiod=iperiod)
+	
+	
+	ax=plt.gca()
+	ax.set_xlabel(r"$1/h_\mathrm{eff}$")
+	ax.set_ylabel(r"$\nu$")
+	
+	ax.set_title(r"$\varepsilon={:.3f} \quad \gamma={:.3f} \quad x_0={:.1f} $".format(float(e),float(gamma),float(x0)))
+	ax.set_yscale("log")
+
+	ax.set_ylim(10**(-2),np.max(freq))
+	
+	print(tf)
+	
+	
+	X,Y=np.meshgrid(hm,freq)
+
+	plt.pcolormesh(X,Y,tf,cmap=plt.get_cmap('Reds'))
+
+	plt.savefig(wdir+"final-s.png",bbox_inches = 'tight',format="png",dpi=150) 
 
 	
 	

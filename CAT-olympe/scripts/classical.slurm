@@ -12,7 +12,7 @@ module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
 nruns=107
-name=e0d59-g0d225
+name=g0d230-e0d60
 wdir=/tmpdir/p0110mm/cat-LCAR/SPP-${SLURM_JOB_ID}-$name
 inputfile=input/$name
 

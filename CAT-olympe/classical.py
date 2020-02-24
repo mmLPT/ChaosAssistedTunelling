@@ -78,10 +78,10 @@ if mode=="compute":
 	
 	mod=PeriodicFunctions(phase=phase)
 	pot=PotentialMP(e,gamma,f=mod.cos)
-	# ~ pot=PotentialDW(e,gamma)
+	# ~ pot=PotentialDW(gamma)
 	cp=ClassicalContinueTimePropagator(pot)
-	pp=PhasePortrait(iperiod,ny0,cp,xmax=np.pi,pmax=2.5,theta1=pot.thetaR1(),theta2=pot.thetaR2(),X0=X0,Y0=Y0,rotated=rotated) 
-	
+	# ~ pp=PhasePortrait(iperiod,ny0,cp,xmax=np.pi,pmax=2.5,theta1=pot.thetaR1(),theta2=pot.thetaR2(),X0=X0,Y0=Y0,rotated=rotated) 
+	pp=PhasePortrait(iperiod,ny0,cp,xmax=np.pi,pmax=2.5) 
 
 	# Generate and save a trajectory
 	x,p=pp.getTrajectory(runid)
@@ -154,16 +154,26 @@ if mode=="plot":
 	# ~ for i in range(0,ny0):
 		# ~ y=pp.generatey0(i)
 		# ~ plt.scatter(y[0],y[1],c="red")
+		
+		
+	e1 = patches.Ellipse((1.65, 0), 1.5,0.7,facecolor="None",alpha=1,lw=2,edgecolor="black",ls="--")
+	e1t = patches.Ellipse((1.65, 0), 1.5,0.7,facecolor="grey",alpha=0.5,lw=2,edgecolor="None")
+	e2 = patches.Ellipse((-1.65, 0), 1.5,0.7,facecolor="None",alpha=1,lw=2,edgecolor="black",ls="--")
+	e2t = patches.Ellipse((-1.65, 0), 1.5,0.7,facecolor="grey",alpha=0.5,lw=2,edgecolor="None")
+	
+	# ~ ax.add_artist(e1t)
+	# ~ ax.add_artist(e1)
+	# ~ ax.add_artist(e2t)
+	# ~ ax.add_artist(e2)
+	
+	# ~ arrow = patches.FancyArrowPatch((1.4, 0.5), (-1.4, 0.5), fc = "black", connectionstyle="arc3,rad=0.25", arrowstyle='<|-|>',mutation_scale = 8.,lw=2)
+	# ~ ax.add_artist(arrow)
 	
 	# ~ condreg=sc<0.5	
 	# ~ condchaotic=sc>0.5
 	# ~ plt.scatter(x[condreg],p[condreg],s=0.02**2,c="blue")
 	# ~ plt.scatter(x[condchaotic],p[condchaotic],s=0.02**2,c="red")
 	
-	# ~ cmap = plt.cm.get_cmap('RdBu')
-	# ~ plt.scatter(x.flatten(),p.flatten(),s=0.02**2,c=cmap(sc.flatten()))
-	
-
 	plt.scatter(x,p,s=0.02**2,c="black")
 	
 	fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
@@ -232,7 +242,7 @@ if mode=="plot2":
 	plt.scatter(xchaotic,pchaotic,s=0.01**2,c="red")
 	plt.scatter(xreg,preg,s=0.01**2,c="blue")
 
-	latex.save(wdir+"phase-portrait",form="png")
+	latex.save(wdir+"phase-portrait-2",form="png")
 	
 if mode=="plot3":
 	# Loading inpute file
@@ -270,4 +280,4 @@ if mode=="plot3":
 	plt.scatter(x[condreg],p[condreg],s=0.02**2,c="blue")
 	plt.scatter(x[condchaotic],p[condchaotic],s=0.02**2,c="red")
 
-	latex.save(wdir+"phase-portrait",form="png")
+	latex.save(wdir+"phase-portrait-3",form="png")

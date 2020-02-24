@@ -139,6 +139,7 @@ if mode=="plot":
 	ax.set_xlim(np.min(1/h),np.max(1/h))
 	# ~ ax.set_xlim(2.8,3)
 	ax.set_ylim(-0.5,0.5)
+	ax.set_ylim(0.2,1.2)
 	ax.grid(which="major",lw=1)
 	ax.grid(which="minor",lw=0.1)
 	
@@ -156,8 +157,8 @@ if mode=="plot":
 	# Colormap for symetric and antisymetric states
 	cmapSym = plt.cm.get_cmap('RdYlGn_r')
 	cmapAsym = plt.cm.get_cmap('Blues')
-	# ~ cmapAsym = plt.cm.get_cmap('RdYlGn_r')
-	# ~ cmapSym = plt.cm.get_cmap('Blues')
+	# ~ cmapAsym = plt.cm.get_cmap('autumn')
+	# ~ cmapSym = plt.cm.get_cmap('winter')
 	c=cmapSym(overlaps)
 	# Filling the color of each quasi-energy with colormp propoto overlaps
 	c[symX!=0]=cmapSym(overlaps[symX!=0]/np.max(overlaps[symX!=0])) 
@@ -173,6 +174,7 @@ if mode=="plot":
 	# Plot
 	plt.scatter(1/h[ind],phase,c=c[ind],s=1**2)
 	plt.scatter(1/h[ind],phase+1,c=c[ind],s=1**2)
+	plt.scatter(1/h[ind],phase-1,c=c[ind],s=1**2)
 
 	plt.savefig(wdir+"spectrum.png", bbox_inches='tight') 
 

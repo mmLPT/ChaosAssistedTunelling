@@ -12,8 +12,12 @@ module purge
 module load openmpi/gnu/2.0.2.10 chdb/1.0-ompi python/3.6.3
 ulimit -s 10240
 
+#g0d249-e0d14
+#g0d247-e0d14
+#g0d251-e0d14
+
 nruns=179
-name=e0d245-g0d375
+name=g0d232-e0d60
 wdir=/tmpdir/p0110mm/cat-LCAR/nu-heff-$name-${SLURM_JOB_ID}
 inputfile=input/$name
 

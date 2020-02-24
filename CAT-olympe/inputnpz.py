@@ -3,17 +3,19 @@ sys.path.insert(0, '..')
 import numpy as np
 from utils.toolsbox import *
 
-inputfile="input/e0d59-g0d225"
+inputfile="input/g0d375-e0d24"
 
 # general information
 N=64
+Ncell=151
+Nini=13
 description=""
 
 # potential parameters
-e=0.59
-gamma=0.225
+e=0.24
+gamma=0.375
 h=0.343
-x0=1.8
+x0=np.pi/2
 # ~ s=13.4
 # ~ nu=48.03*10**3
 # ~ x0exp=28.6
@@ -25,20 +27,24 @@ beta0=0.0*h
 Ndbeta=12.0
 ibeta=10
 
-# spectrum
-nstates=4
-
 # explore
-hmin=0.2
-hmax=0.4
-emin=0.42
-emax=0.44
-gammamin=0.26
-gammamax=0.32
-gmin=0.0
-gmax=1.0
+hmin=1/3.4
+hmax=1/2.4
 
 # free propagation/classical
-iperiod=1000
+iperiod=500
 
-np.savez(inputfile,"w", description=description, N=N, e=e, gamma=gamma, h=h, x0=x0, beta0=beta0, Ndbeta=Ndbeta, iperiod=iperiod,hmin=hmin,hmax=hmax,nstates=nstates,emin=emin,emax=emax,gammamin=gammamin,gammamax=gammamax,gmin=gmin,gmax=gmax,ibeta=ibeta)
+np.savez(inputfile,"w", 
+	description=description, 
+	N=N, 
+	Ncell=Ncell,
+	Nini=Nini,
+	e=e, 
+	gamma=gamma, 
+	h=h, 
+	x0=x0, 
+	beta0=beta0, 
+	Ndbeta=Ndbeta, 
+	iperiod=iperiod,
+	hmin=hmin,
+	hmax=hmax)
