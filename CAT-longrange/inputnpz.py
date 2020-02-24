@@ -3,19 +3,19 @@ sys.path.insert(0, '..')
 import numpy as np
 # ~ from utils.toolsbox import *
 
-inputfile="input/e0d50-g0d15-hm2d416"
+inputfile="input/e0d00-g0d15-hm2d112-Nc1079"
 
 # general information
 Ncell=1001
-N=2*64
+N=32
 description=""
 Npcell=32
 ncellini=1
 
 # potential parameters
-e=0.50
+e=0.00
 gamma=0.15
-h=1/2.416
+h=1/2.112
 x0=0.0
 # explore
 hmin=1/10

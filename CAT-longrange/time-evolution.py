@@ -186,18 +186,6 @@ if mode=="gather":
 		data.close()
 		
 		time=time*4*np.pi
-		# ~ xstd=xstd/(2*np.pi)
-		fit = np.polyfit(time[0:20],xstd[0:20], 1)
-		
-		# ~ xstd2=xstd.copy()
-		
-		# ~ indn=np.arange(-500,501)
-		
-		# ~ for j in range(0,xstd2.size):
-			# ~ xstd2[j]=np.sqrt(np.sum(indn**2*prob[j])/np.sum(prob[j]))
-			
-		
-			
 		fit = np.polyfit(time*(time<100*4*np.pi),xstd*(time<100*4*np.pi), 1)
 		
 		
